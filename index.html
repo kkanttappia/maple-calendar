@@ -331,6 +331,8 @@ select option{background:var(--s2);}
   cursor:pointer;font-weight:600;
   font-family:'Noto Sans KR',sans-serif;
   letter-spacing:0;word-spacing:0;line-height:1.4;
+  font-variant-numeric:tabular-nums;
+  font-feature-settings:'tnum';
 }
 .ev-pill:hover{filter:brightness(1.2);}
 .ev-more{font-size:.58rem;color:var(--muted2);padding:1px 3px;}
@@ -1022,11 +1024,14 @@ function enterApp(code){
 function leaveRoom(){
   fbUnsubs.forEach(u=>u()); fbUnsubs=[];
   roomCode=''; events={}; members={};
-  localStorage.removeItem('maple_room');
-  localStorage.removeItem('maple_nick');
-  localStorage.removeItem('maple_uid');
+  // 방 코드·닉네임·uid는 유지 → 다음 접속 시 자동 재입장
   document.getElementById('appShell').style.display='none';
   document.getElementById('lobbyPage').style.display='flex';
+  // 로비에 닉네임·코드 미리 채워두기
+  const savedNick=localStorage.getItem('maple_nick');
+  const savedCode=localStorage.getItem('maple_room');
+  if(savedNick) document.getElementById('nickInput').value=savedNick;
+  if(savedCode) document.getElementById('joinInput').value=savedCode;
   const url=new URL(location.href);
   url.searchParams.delete('room');
   history.replaceState({},'',url);
@@ -1045,27 +1050,47 @@ window.addEventListener('firebase-ready',async()=>{
   const savedCode=localStorage.getItem('maple_room');
   const savedNick=localStorage.getItem('maple_nick');
   const savedUid =localStorage.getItem('maple_uid');
-  if(urlCode && urlCode!==savedCode){
-    document.getElementById('joinInput').value=urlCode;
-    if(savedNick) document.getElementById('nickInput').value=savedNick;
-    toast('방 코드가 자동 입력됐어요! 닉네임 확인 후 입장하세요');
-  } else if(savedCode && savedNick && savedUid){
+
+  // ── 케이스 1: 저장된 방과 동일한 방 → 자동 재입장
+  if(savedCode && savedNick && savedUid && (!urlCode || urlCode===savedCode)){
     const meta=await fbGet(`rooms/${savedCode}/meta`);
     if(meta){
       myNick=savedNick; myUid=savedUid;
       const existing=await fbGet(`rooms/${savedCode}/members/${savedUid}`);
       if(!existing) await fbSet(`rooms/${savedCode}/members/${savedUid}`,{nickname:savedNick});
       enterApp(savedCode);
-      toast(`👋 ${savedCode} 방에 자동으로 재입장했어요!`);
+      toast(`👋 ${savedCode} 방에 자동 재입장했어요!`);
+      return;
     } else {
+      // 방이 사라진 경우 초기화
       localStorage.removeItem('maple_room');
-      localStorage.removeItem('maple_nick');
-      localStorage.removeItem('maple_uid');
-      if(savedNick) document.getElementById('nickInput').value=savedNick;
     }
-  } else if(savedNick){
-    document.getElementById('nickInput').value=savedNick;
   }
+
+  // ── 케이스 2: URL에 다른 방 코드 → 닉네임만 입력하면 바로 입장
+  if(urlCode){
+    const meta=await fbGet(`rooms/${urlCode}/meta`);
+    if(meta){
+      // 닉네임이 저장돼 있으면 자동으로 입장
+      if(savedNick && savedUid){
+        myNick=savedNick; myUid=savedUid;
+        await fbSet(`rooms/${urlCode}/members/${myUid}`,{nickname:myNick});
+        enterApp(urlCode);
+        toast(`👋 초대 링크로 ${urlCode} 방에 입장했어요!`);
+        return;
+      }
+      // 닉네임 없으면 코드 채워두고 로비 표시
+      document.getElementById('joinInput').value=urlCode;
+      toast('닉네임을 입력하고 방 입장하기를 눌러주세요!');
+    } else {
+      toast('유효하지 않은 초대 링크예요');
+    }
+    return;
+  }
+
+  // ── 케이스 3: 그냥 접속 → 닉네임만 복원
+  if(savedNick) document.getElementById('nickInput').value=savedNick;
+  if(savedCode) document.getElementById('joinInput').value=savedCode;
 });
 
 // ════════════════════════════════════════════
@@ -1186,7 +1211,7 @@ function renderCal(){
       const pill=document.createElement('div');
       pill.className='ev-pill';
       pill.style.cssText=`background:${c.bg};color:${c.hex};`;
-      pill.innerHTML=(ev.time?ev.time+' ':'')+ev.title+(ev.repeat&&ev.repeat!=='none'?'<span class="repeat-icon">🔁</span>':'');
+      pill.innerHTML=(ev.time?toHalfWidth(ev.time)+' ':'')+ev.title+(ev.repeat&&ev.repeat!=='none'?'<span class="repeat-icon">🔁</span>':'');
       pill.onclick=e=>{e.stopPropagation();openEditModal(ev._origDate||ds,ev._origId||eid,ev);};
       evWrap.appendChild(pill);
     });
@@ -1533,6 +1558,12 @@ function calc(){
 // ════════════════════════════════════════════
 //  UTILS
 // ════════════════════════════════════════════
+function toHalfWidth(s){
+  // 전각 숫자/콜론을 반각으로 변환
+  return s.replace(/[０-９：]/g, c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0))
+           .replace(/:/g,':');
+}
+
 function fmtMeso(n){
   if(n>=1e12)return(n/1e12).toFixed(1)+'조';
   if(n>=1e8) return Math.floor(n/1e8)+'억 '+Math.floor((n%1e8)/1e4).toLocaleString()+'만';

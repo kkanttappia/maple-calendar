@@ -172,31 +172,35 @@ select option{background:var(--s2);}
 @keyframes spinning{to{transform:rotate(360deg);}}
 
 /* ══════════════════════════════════════════
-   LOBBY
+   NICKNAME MODAL
 ══════════════════════════════════════════ */
-#lobbyPage{
-  display:flex;align-items:center;justify-content:center;
-  min-height:100vh;min-height:100dvh;padding:20px;
+.nick-modal-bg{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.75);backdrop-filter:blur(8px);
+  z-index:300;align-items:center;justify-content:center;padding:20px;
 }
-.lobby-wrap{width:100%;max-width:420px;}
-.lobby-hero{text-align:center;margin-bottom:32px;}
-.lobby-logo{font-size:2.8rem;margin-bottom:8px;}
-.lobby-title{
-  font-family:'Black Han Sans',sans-serif;font-size:2rem;
+.nick-modal-bg.open{display:flex;}
+.nick-modal{
+  background:var(--s1);border:1px solid var(--border2);
+  border-radius:20px;padding:32px;width:100%;max-width:380px;
+  text-align:center;box-shadow:var(--sh);
+  animation:fadeUp .25s cubic-bezier(.34,1.2,.64,1);
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.nick-modal-logo{font-size:2.4rem;margin-bottom:8px;}
+.nick-modal-title{
+  font-family:'Black Han Sans',sans-serif;font-size:1.6rem;
   background:linear-gradient(135deg,var(--gold2),var(--orange));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:6px;
 }
-.lobby-sub{color:var(--muted2);font-size:.83rem;margin-top:6px;line-height:1.6;}
-.lobby-card{
-  background:var(--s1);border:1px solid var(--border);
-  border-radius:16px;padding:28px;box-shadow:var(--sh);
-}
-.lobby-err{color:var(--red);font-size:.8rem;text-align:center;margin-top:12px;min-height:20px;}
+.nick-modal-sub{color:var(--muted2);font-size:.8rem;margin-bottom:24px;line-height:1.6;}
+.nick-modal-err{color:var(--red);font-size:.78rem;margin-top:8px;min-height:18px;}
 
 /* ══════════════════════════════════════════
    APP SHELL
 ══════════════════════════════════════════ */
-#appShell{display:none;}
+#appShell{display:block;}
 
 /* ── TOP HEADER ── */
 .app-header{
@@ -654,30 +658,19 @@ select option{background:var(--s2);}
 </head>
 <body>
 
-<!-- ════════════════ LOBBY ════════════════ -->
-<div id="lobbyPage">
-  <div class="lobby-wrap">
-    <div class="lobby-hero">
-      <div class="lobby-logo">🍁</div>
-      <div class="lobby-title">메이플 파티 캘린더</div>
-      <p class="lobby-sub">파티원과 보스 일정을 공유하고<br>최적 보스를 함께 추천받아요</p>
+<!-- ════════════════ NICKNAME MODAL ════════════════ -->
+<div class="nick-modal-bg" id="nickModal">
+  <div class="nick-modal">
+    <div class="nick-modal-logo">🍁</div>
+    <div class="nick-modal-title">메이플 파티 캘린더</div>
+    <p class="nick-modal-sub">파티원과 보스 일정을 공유하고<br>최적 보스를 함께 추천받아요</p>
+    <div class="form-group">
+      <label class="lbl">닉네임을 입력해주세요</label>
+      <input type="text" id="nickInput" placeholder="예: 정훈이" maxlength="10"
+        onkeydown="if(event.key==='Enter')submitNick()">
     </div>
-    <div class="lobby-card">
-      <div class="form-group">
-        <label class="lbl">닉네임 (방에서 보이는 이름)</label>
-        <input type="text" id="nickInput" placeholder="예: 정훈이" maxlength="10">
-      </div>
-      <button class="btn-full" onclick="createRoom()">🏠 새 방 만들기</button>
-      <div class="divider-text">또는 초대 코드로 입장</div>
-      <div class="form-group">
-        <label class="lbl">초대 코드 (6자리)</label>
-        <input type="text" id="joinInput" placeholder="ABC123"
-          maxlength="6" style="text-align:center;letter-spacing:4px;font-family:'Black Han Sans',sans-serif;font-size:1.1rem;text-transform:uppercase;"
-          onkeydown="if(event.key==='Enter')joinRoom()">
-      </div>
-      <button class="btn-full btn-ghost" onclick="joinRoom()">🚪 방 입장하기</button>
-      <div class="lobby-err" id="lobbyErr"></div>
-    </div>
+    <button class="btn-full" onclick="submitNick()">🍁 시작하기</button>
+    <div class="nick-modal-err" id="nickErr"></div>
   </div>
 </div>
 
@@ -693,8 +686,8 @@ select option{background:var(--s2);}
       <span class="code" id="roomCodeDisp">------</span>
     </div>
     <div class="header-right">
-      <button class="btn-ghost btn-sm" onclick="copyLink()">🔗</button>
-      <button class="btn-ghost btn-sm" onclick="leaveRoom()">나가기</button>
+      <button class="btn-ghost btn-sm" onclick="copyLink()">🔗 공유</button>
+      <button class="btn-ghost btn-sm" onclick="openNickModal()">✏️ 닉네임</button>
     </div>
   </div>
 
@@ -980,32 +973,32 @@ const fbDel=p=>fb().remove(fbRef(p));
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
 function code6(){return Math.random().toString(36).slice(2,8).toUpperCase();}
 
-async function createRoom(){
-  const nick=document.getElementById('nickInput').value.trim();
-  if(!nick){lobbyErr('닉네임을 입력해주세요');return;}
-  myNick=nick; myUid=uid();
-  const code=code6();
-  await fbSet(`rooms/${code}/meta`,{at:Date.now()});
-  await fbSet(`rooms/${code}/members/${myUid}`,{nickname:nick});
-  enterApp(code);
-}
+// 닉네임 모달 열기/닫기
+function openNickModal(){document.getElementById('nickModal').classList.add('open');}
+function closeNickModal(){document.getElementById('nickModal').classList.remove('open');}
 
-async function joinRoom(){
+async function submitNick(){
   const nick=document.getElementById('nickInput').value.trim();
-  const code=document.getElementById('joinInput').value.trim().toUpperCase();
-  if(!nick){lobbyErr('닉네임을 입력해주세요');return;}
-  if(code.length!==6){lobbyErr('6자리 코드를 입력해주세요');return;}
-  const meta=await fbGet(`rooms/${code}/meta`);
-  if(!meta){lobbyErr('존재하지 않는 방입니다');return;}
-  myNick=nick; myUid=uid();
-  await fbSet(`rooms/${code}/members/${myUid}`,{nickname:nick});
-  enterApp(code);
+  if(!nick){document.getElementById('nickErr').textContent='닉네임을 입력해주세요';return;}
+  myNick=nick;
+  localStorage.setItem('maple_nick',myNick);
+  // myUid가 없으면 새로 생성
+  if(!myUid){ myUid=uid(); localStorage.setItem('maple_uid',myUid); }
+  // 방이 없으면 새로 생성
+  if(!roomCode){
+    const code=code6();
+    await fbSet(`rooms/${code}/meta`,{at:Date.now()});
+    roomCode=code;
+    localStorage.setItem('maple_room',code);
+  }
+  await fbSet(`rooms/${roomCode}/members/${myUid}`,{nickname:myNick});
+  document.getElementById('roomCodeDisp').textContent=roomCode;
+  closeNickModal();
+  toast('👋 환영해요, '+myNick+'!');
 }
 
 function enterApp(code){
   roomCode=code;
-  document.getElementById('lobbyPage').style.display='none';
-  document.getElementById('appShell').style.display='block';
   document.getElementById('roomCodeDisp').textContent=code;
   const now=new Date(); calY=now.getFullYear(); calM=now.getMonth();
   const url=new URL(location.href);
@@ -1014,6 +1007,8 @@ function enterApp(code){
   localStorage.setItem('maple_room',code);
   localStorage.setItem('maple_nick',myNick);
   localStorage.setItem('maple_uid',myUid);
+  // 기존 리스너 정리 후 재등록
+  fbUnsubs.forEach(u=>u()); fbUnsubs=[];
   fbOn(`rooms/${code}/events`,v=>{events=v||{};renderCal();renderUpcoming();});
   fbOn(`rooms/${code}/members`,v=>{members=v||{};renderMembers();});
   renderCal();
@@ -1021,21 +1016,7 @@ function enterApp(code){
   buildColorRow();
 }
 
-function leaveRoom(){
-  fbUnsubs.forEach(u=>u()); fbUnsubs=[];
-  roomCode=''; events={}; members={};
-  // 방 코드·닉네임·uid는 유지 → 다음 접속 시 자동 재입장
-  document.getElementById('appShell').style.display='none';
-  document.getElementById('lobbyPage').style.display='flex';
-  // 로비에 닉네임·코드 미리 채워두기
-  const savedNick=localStorage.getItem('maple_nick');
-  const savedCode=localStorage.getItem('maple_room');
-  if(savedNick) document.getElementById('nickInput').value=savedNick;
-  if(savedCode) document.getElementById('joinInput').value=savedCode;
-  const url=new URL(location.href);
-  url.searchParams.delete('room');
-  history.replaceState({},'',url);
-}
+// leaveRoom 미사용 (로비 제거됨)
 
 function copyLink(){
   const url=new URL(location.href);
@@ -1043,7 +1024,7 @@ function copyLink(){
   navigator.clipboard.writeText(url.toString()).then(()=>toast('🔗 초대 링크가 복사됐어요!'));
 }
 
-function lobbyErr(m){document.getElementById('lobbyErr').textContent=m;}
+function nickErr(m){document.getElementById('nickErr').textContent=m;}
 
 window.addEventListener('firebase-ready',async()=>{
   const urlCode=new URLSearchParams(location.search).get('room');
@@ -1051,46 +1032,40 @@ window.addEventListener('firebase-ready',async()=>{
   const savedNick=localStorage.getItem('maple_nick');
   const savedUid =localStorage.getItem('maple_uid');
 
-  // ── 케이스 1: 저장된 방과 동일한 방 → 자동 재입장
-  if(savedCode && savedNick && savedUid && (!urlCode || urlCode===savedCode)){
-    const meta=await fbGet(`rooms/${savedCode}/meta`);
+  // 사용할 방 코드 결정: URL 우선, 없으면 저장된 코드, 없으면 새로 생성
+  const targetCode = urlCode || savedCode || null;
+
+  if(targetCode && savedNick && savedUid){
+    // 닉네임·uid 있으면 바로 입장
+    const meta=await fbGet(`rooms/${targetCode}/meta`);
     if(meta){
       myNick=savedNick; myUid=savedUid;
-      const existing=await fbGet(`rooms/${savedCode}/members/${savedUid}`);
-      if(!existing) await fbSet(`rooms/${savedCode}/members/${savedUid}`,{nickname:savedNick});
-      enterApp(savedCode);
-      toast(`👋 ${savedCode} 방에 자동 재입장했어요!`);
+      const existing=await fbGet(`rooms/${targetCode}/members/${savedUid}`);
+      if(!existing) await fbSet(`rooms/${targetCode}/members/${savedUid}`,{nickname:savedNick});
+      enterApp(targetCode);
+      if(urlCode && urlCode!==savedCode) toast(`👋 초대 링크로 입장했어요!`);
       return;
-    } else {
-      // 방이 사라진 경우 초기화
-      localStorage.removeItem('maple_room');
     }
+    // 방이 없어진 경우 → 새 방 자동 생성 후 입장
+    localStorage.removeItem('maple_room');
   }
 
-  // ── 케이스 2: URL에 다른 방 코드 → 닉네임만 입력하면 바로 입장
-  if(urlCode){
-    const meta=await fbGet(`rooms/${urlCode}/meta`);
-    if(meta){
-      // 닉네임이 저장돼 있으면 자동으로 입장
-      if(savedNick && savedUid){
-        myNick=savedNick; myUid=savedUid;
-        await fbSet(`rooms/${urlCode}/members/${myUid}`,{nickname:myNick});
-        enterApp(urlCode);
-        toast(`👋 초대 링크로 ${urlCode} 방에 입장했어요!`);
-        return;
-      }
-      // 닉네임 없으면 코드 채워두고 로비 표시
-      document.getElementById('joinInput').value=urlCode;
-      toast('닉네임을 입력하고 방 입장하기를 눌러주세요!');
-    } else {
-      toast('유효하지 않은 초대 링크예요');
-    }
+  if(savedNick && savedUid){
+    // 닉네임은 있는데 방이 없는 경우 → 새 방 생성
+    myNick=savedNick; myUid=savedUid;
+    const code=code6();
+    await fbSet(`rooms/${code}/meta`,{at:Date.now()});
+    await fbSet(`rooms/${code}/members/${myUid}`,{nickname:myNick});
+    enterApp(code);
     return;
   }
 
-  // ── 케이스 3: 그냥 접속 → 닉네임만 복원
+  // 닉네임 없는 경우 → 닉네임 모달 표시
   if(savedNick) document.getElementById('nickInput').value=savedNick;
-  if(savedCode) document.getElementById('joinInput').value=savedCode;
+  openNickModal();
+  renderCal(); renderBossList(); buildColorRow();
+  const now=new Date(); calY=now.getFullYear(); calM=now.getMonth();
+  renderCal();
 });
 
 // ════════════════════════════════════════════

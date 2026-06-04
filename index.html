@@ -530,6 +530,56 @@ select option{background:var(--s2);}
   justify-content:center;font-size:1.4rem;
   border:1px solid var(--border);flex-shrink:0;
 }
+/* 파티 선택 */
+.party-selector{
+  display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;
+}
+.party-selector-label{font-size:.68rem;color:var(--muted2);}
+.party-chip{
+  font-size:.65rem;padding:2px 8px;border-radius:10px;
+  border:1.5px solid var(--border);background:var(--s3);
+  color:var(--muted2);cursor:pointer;transition:all .15s;
+  font-family:'Black Han Sans',sans-serif;
+}
+.party-chip.sel{border-color:var(--gold);color:var(--gold);background:rgba(245,166,35,.12);}
+.party-chip.p1{--pc:var(--gold);}
+.party-chip.p2{--pc:#60a0f5;}
+.party-chip.p3{--pc:#3ecf8e;}
+.party-chip.p4{--pc:#a060f5;}
+.party-chip.sel.p1{border-color:var(--gold);color:var(--gold);background:rgba(245,166,35,.12);}
+.party-chip.sel.p2{border-color:#60a0f5;color:#60a0f5;background:rgba(96,160,245,.12);}
+.party-chip.sel.p3{border-color:#3ecf8e;color:#3ecf8e;background:rgba(62,207,142,.12);}
+.party-chip.sel.p4{border-color:#a060f5;color:#a060f5;background:rgba(160,96,245,.12);}
+
+/* 파티 요약 카드 */
+.party-summary-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:20px;
+}
+.party-summary-card{
+  background:var(--s2);border:1px solid var(--border);
+  border-radius:var(--r);padding:14px;
+}
+.party-summary-title{
+  font-family:'Black Han Sans',sans-serif;font-size:.9rem;
+  margin-bottom:10px;display:flex;align-items:center;gap:6px;
+}
+.party-count-badge{
+  font-size:.65rem;padding:2px 7px;border-radius:10px;
+  background:var(--s3);color:var(--muted2);
+}
+.party-member-list{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+.party-member-item{
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:.75rem;padding:4px 8px;background:var(--s3);border-radius:6px;
+}
+.party-member-name{color:var(--text);font-weight:600;}
+.party-member-equiv{color:var(--gold);font-family:'Black Han Sans',sans-serif;}
+.party-scale-info{
+  font-size:.72rem;color:var(--muted2);padding:8px;
+  background:var(--bg);border-radius:6px;line-height:1.7;
+}
+.party-scale-val{color:var(--green);font-weight:700;}
+
 /* 보스 가능여부 뱃지 */
 .boss-feasibility{display:flex;flex-direction:column;gap:6px;margin-top:4px;}
 .bf-row{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:.68rem;}
@@ -1394,6 +1444,41 @@ async function delEv(date,id){
 }
 
 // ════════════════════════════════════════════
+//  PARTY SCALE (인원별 보스 데미지 배율)
+//  파티원이 많을수록 보스 HP 증가 → 요구 스탯 증가
+//  솔플=1.0 기준, n명 파티 시 개인 기여도 기준 환산
+// ════════════════════════════════════════════
+const PARTY_SCALE = {1:1.0, 2:0.65, 3:0.5, 4:0.42};
+
+// 파티번호별 캐릭터 집계 (members 기반)
+function getPartyGroups(){
+  const groups = {1:[],2:[],3:[],4:[]};
+  Object.values(members).forEach(m=>{
+    Object.values(m.chars||{}).forEach(ch=>{
+      const p = ch.partyNo||1;
+      if(groups[p]) groups[p].push({...ch, ownerNick:m.nickname});
+    });
+  });
+  return groups;
+}
+
+// 특정 파티의 보스 가능여부 계산
+function getPartyBossFeasibility(chars, bossId){
+  if(!chars.length) return null;
+  const n = Math.min(chars.length, 4);
+  const scale = PARTY_SCALE[n]||0.42;
+  const th = BOSS_THRESHOLDS[bossId];
+  if(!th) return null;
+  // 파티원 전체 환산주스탯 합산 × 배율
+  const totalEquiv = chars.reduce((s,ch)=>s+(ch.equivStat||0),0);
+  const effectiveEquiv = totalEquiv * scale;
+  const t = n===1 ? th.solo : th.party;
+  if(effectiveEquiv >= t.easy) return 'easy';
+  if(effectiveEquiv >= t.ok)   return 'ok';
+  return 'no';
+}
+
+// ════════════════════════════════════════════
 //  BOSS FEASIBILITY DATA (환산주스탯 기준, 커뮤니티 기준값)
 //  솔플 기준: {easy: 10분이내, ok: 제한시간내, no: 불가}
 //  파티(4인) 기준: 솔플 기준의 약 40% 수준
@@ -1444,22 +1529,23 @@ const BOSS_THRESHOLDS = {
 //  넥슨 API stat_list에서 주스탯, 부스탯, 공/마력, 보스데미지% 추출
 // ════════════════════════════════════════════
 function calcEquivStat(statList, attackPower, bossPercent, hexaStat){
-  // 스탯 맵 생성
   const sm={};
   if(statList) statList.forEach(s=>{ sm[s.stat_type]=parseFloat(s.stat_value)||0; });
-  // 직업별 주/부스탯 결정은 공격력/마력으로 판단
-  const atk = Math.max(attackPower||0, sm['최대 마력']||0, sm['최대 공격력']||0);
-  // 주스탯 (STR/DEX/INT/LUK 중 최대)
-  const mainStat = Math.max(sm['STR']||0, sm['DEX']||0, sm['INT']||0, sm['LUK']||0);
-  // 부스탯 (주스탯 제외 합산)
-  const allStats = (sm['STR']||0)+(sm['DEX']||0)+(sm['INT']||0)+(sm['LUK']||0);
+  // 공/마력 (이미 registerChar에서 계산된 값 우선 사용)
+  const atk = attackPower||0;
+  // 주스탯: STR/DEX/INT/LUK 한글/영문 키 모두 커버
+  const STR = sm['STR']||sm['힘']||0;
+  const DEX = sm['DEX']||sm['민첩']||0;
+  const INT = sm['INT']||sm['지능']||0;
+  const LUK = sm['LUK']||sm['운']||0;
+  const mainStat = Math.max(STR, DEX, INT, LUK);
+  const allStats = STR+DEX+INT+LUK;
   const subStat = allStats - mainStat;
-  // 보스 데미지 보정 (기본 100% 기준)
+  // 보스데미지 배율
   const bossDmg = 1 + ((bossPercent||0)/100);
-  // 환산주스탯 공식 (만 단위)
-  // = (주스탯 + 부스탯×0.2 + 공/마×4) × 보스배율 / 10000 + 헥사보정
+  // 환산주스탯 = (주스탯 + 부스탯×0.2 + 공마×4) × 보스배율 / 10000 + 헥사보정
   const base = (mainStat + subStat*0.2 + atk*4) * bossDmg;
-  const hexaBonus = (hexaStat||0) * 1000; // 헥사스탯 1당 1000 환산
+  const hexaBonus = (hexaStat||0) * 1000;
   return Math.round((base + hexaBonus) / 10000);
 }
 
@@ -1492,60 +1578,81 @@ async function registerChar(){
   try{
     const BASE='/api/nexon/maplestory/v1';
     const H={};  // API Key는 서버에서 자동 적용
-    const dt=yesterday();
-
     // ocid
     const oRes=await fetch(`${BASE}/id?character_name=${encodeURIComponent(name)}`,{headers:H});
     if(!oRes.ok) throw new Error('캐릭터를 찾을 수 없습니다');
     const {ocid}=await oRes.json();
 
-    // 기본 정보 + 스탯 + 헥사스탯 + 헥사코어 병렬 조회
-    const [iRes, sRes, hStatRes, hMatRes] = await Promise.all([
-      fetch(`${BASE}/character/basic?ocid=${ocid}&date=${dt}`,{headers:H}),
+    // 날짜 fallback: 어제 → 그제 순으로 시도 (API는 전날 기준 제공)
+    let dt=yesterday(1);
+    let iResTest=await fetch(`${BASE}/character/basic?ocid=${ocid}&date=${dt}`,{headers:H});
+    if(!iResTest.ok){ dt=yesterday(2); iResTest=await fetch(`${BASE}/character/basic?ocid=${ocid}&date=${dt}`,{headers:H}); }
+    if(!iResTest.ok) throw new Error('기본 정보 조회 실패 (최근 접속 이력 없음)');
+    const info=await iResTest.json();
+
+    // 스탯 + 헥사스탯 + 헥사코어 병렬 조회
+    const [sRes, hStatRes, hMatRes] = await Promise.all([
       fetch(`${BASE}/character/stat?ocid=${ocid}&date=${dt}`,{headers:H}),
       fetch(`${BASE}/character/hexamatrix-stat?ocid=${ocid}&date=${dt}`,{headers:H}),
       fetch(`${BASE}/character/hexamatrix?ocid=${ocid}&date=${dt}`,{headers:H}),
     ]);
-    if(!iRes.ok) throw new Error('기본 정보 조회 실패');
-    const info = await iRes.json();
 
-    // 스탯
+    // 스탯 (다양한 키명 커버)
     let statList=[], attackPower=0, bossPercent=0;
     if(sRes.ok){
       const sd=await sRes.json();
       statList = sd.final_stat||[];
       const sm={};
-      statList.forEach(s=>{ sm[s.stat_type]=parseFloat(s.stat_value)||0; });
-      attackPower = Math.max(sm['최대 공격력']||0, sm['최대 마력']||0);
-      bossPercent = sm['보스 몬스터 데미지']||0;
+      statList.forEach(s=>{
+        const k=s.stat_type||'';
+        const v=parseFloat(s.stat_value)||0;
+        sm[k]=v;
+      });
+      // 공격력/마력 키값 여러 형태 커버
+      attackPower = Math.max(
+        sm['최대 공격력']||sm['공격력']||sm['ATK']||0,
+        sm['최대 마력']||sm['마력']||sm['MAGIC ATK']||0
+      );
+      // 보스데미지 키값 여러 형태 커버
+      bossPercent = sm['보스 몬스터 데미지']||sm['보스몬스터 데미지']||sm['보스 데미지']||0;
     }
 
-    // 헥사스탯 자동 조회
+    // 헥사스탯 자동 조회 (키값 여러 형태 커버)
     let hexaStatData=[], hexaStatTotal=0;
     if(hStatRes.ok){
       const hsd=await hStatRes.json();
-      hexaStatData = hsd.character_hexa_stat_core||[];
-      // 헥사스탯 총 레벨 합산 (주스탯 + 보공 등 모든 코어)
+      // API 응답 키값: character_hexa_stat_core 또는 character_hexa_stat_core_2
+      hexaStatData = hsd.character_hexa_stat_core||hsd.hexa_stat_core||[];
       hexaStatTotal = hexaStatData.reduce((sum,core)=>{
-        return sum+(core.stat_level||0)+(core.stat_level2||0)+(core.stat_level3||0);
+        // 레벨 키값: stat_level 또는 main_stat_level
+        const lv1 = core.stat_level||core.main_stat_level||0;
+        const lv2 = core.stat_level2||core.sub_stat_level_1||0;
+        const lv3 = core.stat_level3||core.sub_stat_level_2||0;
+        return sum+lv1+lv2+lv3;
       },0);
     }
 
-    // 헥사코어(6차 강화) 자동 조회
+    // 헥사코어(6차 강화) 자동 조회 (키값 여러 형태 커버)
     let hexaCoreData=[], hexaCoreTotal=0;
     if(hMatRes.ok){
       const hmd=await hMatRes.json();
-      hexaCoreData = hmd.character_hexa_core_equipment||[];
-      // 6차 코어 레벨 합산
+      hexaCoreData = hmd.character_hexa_core_equipment||hmd.hexa_core_equipment||[];
       hexaCoreTotal = hexaCoreData.reduce((sum,core)=>{
-        return sum+(core.hexa_core_level||0);
+        return sum+(core.hexa_core_level||core.core_level||0);
       },0);
     }
 
     const charId='c'+Date.now().toString(36);
-    // 헥사스탯 레벨 합산을 환산치에 반영
     const hexaStat = hexaStatTotal;
     const equivStat=calcEquivStat(statList, attackPower, bossPercent, hexaStat);
+    // 디버그 로그 (F12 콘솔에서 확인)
+    console.log('[캐릭터 등록]', {
+      charName: info.character_name,
+      attackPower, bossPercent,
+      hexaStatTotal, hexaCoreTotal,
+      equivStat,
+      statSample: statList.slice(0,5)
+    });
 
     // 내 멤버 데이터 가져와서 chars에 추가
     const existing=await fbGet(`rooms/${roomCode}/members/${myUid}`)||{};
@@ -1632,8 +1739,25 @@ function renderCharCard(uid, charId, ch, isMe){
       <div class="char-stat">⚡ 6차코어 <b>Lv.${ch.hexaCoreTotal||0}</b></div>
     </div>
     <div class="char-equiv">환산주스탯: ${equivStat.toLocaleString()}만</div>
+    ${isMyUid?`
+    <div class="party-selector">
+      <span class="party-selector-label">파티</span>
+      ${[1,2,3,4].map(p=>`
+        <div class="party-chip p${p}${(ch.partyNo||1)===p?' sel':''}"
+          onclick="setCharParty('${uid}','${charId}',${p})">
+          ${p}파티
+        </div>`).join('')}
+    </div>`:'<div class="party-selector"><span class="party-selector-label">파티 <b style="color:var(--text)">${ch.partyNo||1}</b>파티</span></div>'}
     <div class="boss-feasibility">${feasRows}</div>
   </div>`;
+}
+
+async function setCharParty(uid, charId, partyNo){
+  const existing=await fbGet(`rooms/${roomCode}/members/${uid}`)||{};
+  const chars=existing.chars||{};
+  if(!chars[charId]) return;
+  chars[charId].partyNo=partyNo;
+  await fbSet(`rooms/${roomCode}/members/${uid}`,{...existing,chars});
 }
 
 function renderMembers(){
@@ -1643,7 +1767,45 @@ function renderMembers(){
     grid.innerHTML='<div class="empty"><span class="icon">👥</span>캐릭터를 추가해주세요</div>';
     return;
   }
-  grid.innerHTML=list.map(([uid,m])=>{
+
+  // 파티별 요약 카드 생성
+  const groups=getPartyGroups();
+  const PARTY_COLORS=['','var(--gold)','#60a0f5','#3ecf8e','#a060f5'];
+  const partySummaryHtml = Object.entries(groups)
+    .filter(([p,chars])=>chars.length>0)
+    .map(([p,chars])=>{
+      const n=chars.length;
+      const scale=PARTY_SCALE[Math.min(n,4)]||0.42;
+      const totalEquiv=chars.reduce((s,ch)=>s+(ch.equivStat||0),0);
+      const effectiveEquiv=Math.round(totalEquiv*scale);
+      return `<div class="party-summary-card">
+        <div class="party-summary-title" style="color:${PARTY_COLORS[p]}">
+          ${p}파티
+          <span class="party-count-badge">${n}명</span>
+        </div>
+        <div class="party-member-list">
+          ${chars.map(ch=>`
+            <div class="party-member-item">
+              <span class="party-member-name">${ch.charName||'?'} <small style="color:var(--muted2)">(${ch.ownerNick})</small></span>
+              <span class="party-member-equiv">${(ch.equivStat||0).toLocaleString()}만</span>
+            </div>`).join('')}
+        </div>
+        <div class="party-scale-info">
+          합산 환산주스탯 ${totalEquiv.toLocaleString()}만<br>
+          ${n}인 배율(×${scale}) 적용 →
+          <span class="party-scale-val">유효 ${effectiveEquiv.toLocaleString()}만</span>
+        </div>
+      </div>`;
+    }).join('');
+
+  const memberSectionsEl = document.createElement('div');
+  if(partySummaryHtml){
+    grid.innerHTML=`<div class="party-summary-grid">${partySummaryHtml}</div>`;
+  } else {
+    grid.innerHTML='';
+  }
+  const membersWrap = document.createElement('div');
+  membersWrap.innerHTML=list.map(([uid,m])=>{
     const chars=Object.entries(m.chars||{});
     const isMe=uid===myUid;
     return `<div class="member-section${isMe?' is-me':''}">
@@ -1658,6 +1820,7 @@ function renderMembers(){
       ${isMe?`<button class="add-char-btn" onclick="document.getElementById('charNameInput').focus();document.querySelector('.nav-item').click();">+ 캐릭터 추가</button>`:''}
     </div>`;
   }).join('');
+  grid.appendChild(membersWrap);
 }
 
 // ════════════════════════════════════════════
@@ -1665,85 +1828,77 @@ function renderMembers(){
 // ════════════════════════════════════════════
 function renderRec(){
   const el=document.getElementById('recContent');
-  // 각 파티원의 대표 캐릭터(equivStat 최고)를 기준으로 사용
-  const mList=Object.values(members).map(m=>{
-    const chars=Object.values(m.chars||{});
-    if(!chars.length) return null;
-    const best=chars.reduce((a,b)=>(a.equivStat||0)>(b.equivStat||0)?a:b);
-    return {...best, nickname:m.nickname};
-  }).filter(Boolean);
-  if(!mList.length){
+  const groups=getPartyGroups();
+  const hasAny=Object.values(groups).some(g=>g.length>0);
+  if(!hasAny){
     el.innerHTML='<div class="empty"><span class="icon">🗺</span>파티원 탭에서 캐릭터를 먼저 등록해주세요</div>';
     return;
   }
 
+  const PARTY_COLORS=['','var(--gold)','#60a0f5','#3ecf8e','#a060f5'];
   const sorted=[...BOSSES].sort((a,b)=>b.meso-a.meso);
-  const all=[],part=[];
-  let allMeso=0, partMeso=0;
-
-  sorted.forEach(b=>{
-    const th=BOSS_THRESHOLDS[b.id];
-    const ok=mList.filter(m=>{
-      if(!th) return m.charLevel>=b.minLv;
-      const f=getBossFeasibility(m.equivStat||0,b.id,mList.length);
-      return f==='easy'||f==='ok';
-    });
-    const no=mList.filter(m=>{
-      if(!th) return m.charLevel<b.minLv;
-      const f=getBossFeasibility(m.equivStat||0,b.id,mList.length);
-      return f==='no';
-    });
-    if(ok.length===mList.length){all.push({b,ok,no});allMeso+=b.meso;}
-    else if(ok.length>0){part.push({b,ok,no});partMeso+=ok.length/mList.length*b.meso;}
-  });
-
   const maxMeso=Math.max(...sorted.map(b=>b.meso));
 
-  function card({b,ok,no}){
-    const c=COLORS.find(x=>x.id==='gold');
+  function bossCard(b, chars){
+    const n=Math.min(chars.length,4);
+    const scale=PARTY_SCALE[n]||0.42;
+    const totalEquiv=chars.reduce((s,ch)=>s+(ch.equivStat||0),0);
+    const effectiveEquiv=Math.round(totalEquiv*scale);
+    const f=getPartyBossFeasibility(chars,b.id);
+    if(!f) return '';
     const pct=Math.min(100,(b.meso/maxMeso)*100);
-    const isAll=no.length===0;
-    return `<div class="rec-card${isAll?' all-ok':''}">
+    const fLabel=f==='easy'?'<span class="bf-badge bf-easy">✅ 여유</span>':
+                 f==='ok'  ?'<span class="bf-badge bf-ok">🔵 가능</span>':
+                            '<span class="bf-badge bf-no">❌ 불가</span>';
+    return `<div class="rec-card${f!=='no'?' all-ok':''}">
       <div class="rec-boss-header">
         <div class="rec-boss-name">${b.name}</div>
         <div class="diff-badge diff-${b.diff}">${DL[b.diff]}</div>
-        ${b.cycle==='monthly'?'<div class="chip chip-purple" style="font-size:.58rem;padding:1px 6px;">월간</div>':''}
+        ${b.cycle==='monthly'?'<span class="chip chip-purple" style="font-size:.58rem;padding:1px 6px;">월간</span>':''}
+        <div style="margin-left:auto;">${fLabel}</div>
       </div>
       <div class="rec-meso">💰 ${fmtShort(b.meso)} / 회</div>
       <div class="meso-bar-wrap">
         <div class="meso-bar-lbl">
-          <span>최소 Lv.${b.minLv}</span>
-          <span>${ok.length}/${mList.length}명 가능</span>
+          <span>${n}인×${scale} → 유효 ${effectiveEquiv.toLocaleString()}만</span>
         </div>
         <div class="meso-bar"><div class="meso-bar-fill" style="width:${pct.toFixed(1)}%"></div></div>
       </div>
-      <div class="rec-members" style="margin-top:8px;">
-        ${ok.map(m=>`<span class="rec-chip ok">${m.charName||m.nickname} ${m.charLevel}</span>`).join('')}
-        ${no.map(m=>`<span class="rec-chip no">${m.charName||m.nickname} ${m.charLevel}</span>`).join('')}
+      <div class="rec-members" style="margin-top:6px;">
+        ${chars.map(ch=>`<span class="rec-chip ok">${ch.charName||'?'}</span>`).join('')}
       </div>
     </div>`;
   }
 
-  el.innerHTML=`
-    <div class="rec-summary">
-      <div class="rec-stat">
-        <div class="rec-stat-val">${all.length}</div>
-        <div class="rec-stat-lbl">전원 가능 보스</div>
-      </div>
-      <div class="rec-stat">
-        <div class="rec-stat-val">${fmtShort(allMeso)}</div>
-        <div class="rec-stat-lbl">전원 주간 수익</div>
-      </div>
-      <div class="rec-stat">
-        <div class="rec-stat-val">${mList.length}명</div>
-        <div class="rec-stat-lbl">등록 파티원</div>
-      </div>
-    </div>
-    <div class="rec-section">✅ 전원 입장 가능 (${all.length}개)</div>
-    <div class="rec-grid">${all.map(card).join('')||'<div class="empty">해당 없음</div>'}</div>
-    <div class="rec-section">⚠️ 일부만 가능 (${part.length}개)</div>
-    <div class="rec-grid">${part.map(card).join('')||'<div class="empty">해당 없음</div>'}</div>
-  `;
+  const partyHtml = Object.entries(groups)
+    .filter(([p,chars])=>chars.length>0)
+    .map(([p,chars])=>{
+      const n=Math.min(chars.length,4);
+      const scale=PARTY_SCALE[n]||0.42;
+      const easy=[],ok=[],no=[];
+      sorted.forEach(b=>{
+        const f=getPartyBossFeasibility(chars,b.id);
+        if(f==='easy') easy.push(b);
+        else if(f==='ok') ok.push(b);
+        else if(f==='no') no.push(b);
+      });
+      return `
+        <div style="margin-bottom:28px;">
+          <div style="font-family:'Black Han Sans',sans-serif;font-size:1rem;
+            color:${PARTY_COLORS[p]};margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+            ${p}파티
+            <span style="font-size:.72rem;color:var(--muted2);font-family:'Noto Sans KR',sans-serif;">
+              ${n}명 · ${n}인 배율 ×${scale}
+            </span>
+          </div>
+          <div class="rec-section">✅ 여유 클리어 (${easy.length}개)</div>
+          <div class="rec-grid">${easy.map(b=>bossCard(b,chars)).join('')||'<div class="empty">해당 없음</div>'}</div>
+          <div class="rec-section">🔵 클리어 가능 (${ok.length}개)</div>
+          <div class="rec-grid">${ok.map(b=>bossCard(b,chars)).join('')||'<div class="empty">해당 없음</div>'}</div>
+        </div>`;
+    }).join('');
+
+  el.innerHTML=partyHtml;
 }
 
 // ════════════════════════════════════════════
@@ -1847,7 +2002,7 @@ function fmtShort(n){
 function fmtDate(d){
   return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
-function yesterday(){const d=new Date();d.setDate(d.getDate()-1);return fmtDate(d);}
+function yesterday(offset=1){const d=new Date();d.setDate(d.getDate()-offset);return fmtDate(d);}
 
 let _toastT;
 function toast(msg){

@@ -1787,7 +1787,7 @@ async function registerChar(){
       charLevel:info.character_level||0,
       charImage:info.character_image||'',
       charWorld:info.world_name||'-',
-      statList, attackPower:statAttack, bossPercent, ignoreDef, combatPower, allEquiv,
+      statList, attackPower, bossPercent, ignoreDef, combatPower, allEquiv,
       hexaStat,
       hexaStatTotal,
       hexaCoreTotal,
@@ -1842,7 +1842,7 @@ async function refreshChar(uid, charId, charName){
       statList=sd.final_stat||[];
       statList.forEach(s=>{ sm[(s.stat_name||s.stat_type||'').trim()]=parseFloat(s.stat_value)||0; });
     }
-    const statAttack=Math.max(sm['최대 스탯공격력']||0, sm['최대 스탯마력']||0);
+    const attackPower=Math.max(sm['최대 스탯공격력']||0, sm['최대 스탯마력']||0);
     let hexaStatTotal=0, hexaCoreTotal=0, hexaStatData=[], hexaCoreData=[];
     if(hStatRes.ok){
       const hsd=await hStatRes.json();
@@ -1859,7 +1859,7 @@ async function refreshChar(uid, charId, charName){
     const critDmg2=sm['크리티컬 데미지']||sm['크리티컬데미지']||
                   sm['크리티컬 데미지%']||sm['최대 크리티컬 데미지']||0;
     const combatPower2=sm['전투력']||parseInt(info.character_combat_power||0)||0;
-    const allEquiv=calcAllEquiv(statAttack,bossPercent,hexaStat,ignoreDef2,combatPower2,critDmg2);
+    const allEquiv=calcAllEquiv(attackPower,bossPercent,hexaStat,ignoreDef2,combatPower2,critDmg2);
     const equivStat=allEquiv.e380;
     const existing=await fbGet(`rooms/${roomCode}/members/${uid}`)||{};
     const chars=existing.chars||{};
@@ -1870,7 +1870,7 @@ async function refreshChar(uid, charId, charName){
         charLevel:info.character_level||0,
         charImage:info.character_image||'',
         charWorld:info.world_name||'-',
-        statList, attackPower:statAttack, bossPercent, ignoreDef,
+        statList, attackPower, bossPercent, ignoreDef,
         hexaStat, hexaStatTotal, hexaCoreTotal,
         hexaStatData:hexaStatData.slice(0,5),
         hexaCoreData:hexaCoreData.slice(0,5),

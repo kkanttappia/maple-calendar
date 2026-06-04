@@ -1711,6 +1711,7 @@ async function registerChar(){
     if(!iResTest.ok){ dt=yesterday(2); iResTest=await fetch(`${BASE}/character/basic?ocid=${ocid}&date=${dt}`,{headers:H}); }
     if(!iResTest.ok) throw new Error('기본 정보 조회 실패 (최근 접속 이력 없음)');
     const info=await iResTest.json();
+    // 전투력은 character/popularity API에서 제공되기도 함 - stat에서 우선 시도
 
     // 스탯 + 헥사스탯 + 헥사코어 병렬 조회
     const [sRes, hStatRes, hMatRes] = await Promise.all([
@@ -1720,35 +1721,25 @@ async function registerChar(){
     ]);
 
     // 스탯 파싱 (실제 API 키값 기준)
-    let statList=[], statAttack=0, bossPercent=0;
+    let statList=[], attackPower=0, bossPercent=0, ignoreDef=0, critDmg=0, combatPower=0;
     if(sRes.ok){
       const sd=await sRes.json();
-      statList = sd.final_stat||[];
+      statList=sd.final_stat||[];
       const sm={};
       statList.forEach(s=>{
         const k=(s.stat_name||s.stat_type||'').trim();
-        const v=parseFloat(s.stat_value)||0;
-        sm[k]=v;
+        sm[k]=parseFloat(s.stat_value)||0;
       });
-      // '최대 스탯공격력' = 이미 스탯×공마가 곱해진 최종 스탯공격력 수치
-      // 마법사는 '최대 스탯마력' 사용
-      statAttack = Math.max(
-        sm['최대 스탯공격력']||0,
-        sm['최대 스탯마력']  ||0
-      );
-      bossPercent = sm['보스 몬스터 데미지']||sm['보스몬스터 데미지']||
-                   sm['보스 데미지']||0;
+      attackPower  = Math.max(sm['최대 스탯공격력']||0, sm['최대 스탯마력']||0);
+      bossPercent  = sm['보스 몬스터 데미지']||sm['보스몬스터 데미지']||sm['보스 데미지']||0;
+      ignoreDef    = sm['방어율 무시']||sm['방어율무시']||sm['몬스터 방어율 무시']||0;
+      critDmg      = sm['크리티컬 데미지']||sm['크리티컬데미지']||sm['최대 크리티컬 데미지']||0;
+      combatPower  = parseInt(sm['전투력']||0)||0;
     }
-    // attackPower 변수명 유지 (하위 호환)
-    const attackPower = statAttack;
-    const ignoreDef = (() => {
-      const sm2={};
-      statList.forEach(s=>{ sm2[(s.stat_name||s.stat_type||'').trim()]=parseFloat(s.stat_value)||0; });
-      return sm2['방어율 무시']||0;
-    })();
+    // 전투력이 stat에 없으면 basic API 필드에서 시도
+    if(!combatPower) combatPower = parseInt(info.character_combat_power||0)||0;
 
-    // 헥사스탯 자동 조회 (키값 여러 형태 커버)
-    let hexaStatData=[], hexaStatTotal=0;
+        let hexaStatData=[], hexaStatTotal=0;
     if(hStatRes.ok){
       const hsd=await hStatRes.json();
       // API 응답 키값: character_hexa_stat_core 또는 character_hexa_stat_core_2
@@ -1777,12 +1768,14 @@ async function registerChar(){
     const allEquiv=calcAllEquiv(attackPower, bossPercent, hexaStat, ignoreDef, combatPower, critDmg||0);
     const equivStat=allEquiv.e380;
     // 디버그 로그 (F12 콘솔에서 확인)
+    const statKeys = statList.map(s=>`${s.stat_name||s.stat_type}:${s.stat_value}`);
     console.log('[캐릭터 등록]', {
       charName: info.character_name,
-      attackPower, bossPercent,
+      attackPower, bossPercent, ignoreDef, critDmg, combatPower,
+      equivStat, allEquiv,
       hexaStatTotal, hexaCoreTotal,
-      equivStat,
-      statSample: statList.slice(0,5)
+      // 전체 스탯 키값 목록
+      allStatKeys: statKeys,
     });
 
     // 내 멤버 데이터 가져와서 chars에 추가
@@ -1850,7 +1843,6 @@ async function refreshChar(uid, charId, charName){
       statList.forEach(s=>{ sm[(s.stat_name||s.stat_type||'').trim()]=parseFloat(s.stat_value)||0; });
     }
     const statAttack=Math.max(sm['최대 스탯공격력']||0, sm['최대 스탯마력']||0);
-    const bossPercent=sm['보스 몬스터 데미지']||sm['보스몬스터 데미지']||0;
     let hexaStatTotal=0, hexaCoreTotal=0, hexaStatData=[], hexaCoreData=[];
     if(hStatRes.ok){
       const hsd=await hStatRes.json();
@@ -1863,9 +1855,10 @@ async function refreshChar(uid, charId, charName){
       hexaCoreTotal=hexaCoreData.reduce((s,c)=>s+(c.hexa_core_level||c.core_level||0),0);
     }
     const hexaStat=hexaStatTotal;
-    const ignoreDef2=sm['방어율 무시']||0;
-    const critDmg2=sm['크리티컬 데미지']||sm['크리티컬데미지']||0;
-    const combatPower2=sm['전투력']||0;
+    const ignoreDef2=sm['방어율 무시']||sm['방어율무시']||sm['몬스터 방어율 무시']||0;
+    const critDmg2=sm['크리티컬 데미지']||sm['크리티컬데미지']||
+                  sm['크리티컬 데미지%']||sm['최대 크리티컬 데미지']||0;
+    const combatPower2=sm['전투력']||parseInt(info.character_combat_power||0)||0;
     const allEquiv=calcAllEquiv(statAttack,bossPercent,hexaStat,ignoreDef2,combatPower2,critDmg2);
     const equivStat=allEquiv.e380;
     const existing=await fbGet(`rooms/${roomCode}/members/${uid}`)||{};
@@ -1992,11 +1985,15 @@ function renderCharCard(uid, charId, ch, isMe){
     <div class="equiv-grid">
       <div class="equiv-item">
         <div class="equiv-label">전투력</div>
-        <div class="equiv-val cp">${fmtCP(ch.allEquiv?.combat||ch.combatPower||0)}</div>
+        <div class="equiv-val cp">${(ch.allEquiv?.combat||ch.combatPower)
+          ? fmtCP(ch.allEquiv?.combat||ch.combatPower)
+          : '<span style="font-size:.65rem;color:var(--muted2)">🔄 재조회</span>'}</div>
       </div>
       <div class="equiv-item">
         <div class="equiv-label">환산(300)</div>
-        <div class="equiv-val e300">${(ch.allEquiv?.e300||0).toLocaleString()}</div>
+        <div class="equiv-val e300">${ch.allEquiv?.e300
+          ? ch.allEquiv.e300.toLocaleString()
+          : '<span style="font-size:.65rem;color:var(--muted2)">🔄 재조회</span>'}</div>
       </div>
       <div class="equiv-item">
         <div class="equiv-label">환산(380)</div>

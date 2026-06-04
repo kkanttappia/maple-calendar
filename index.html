@@ -49,6 +49,32 @@
   --sh:       0 4px 24px rgba(0,0,0,.45);
   --sh2:      0 2px 10px rgba(0,0,0,.3);
 }
+/* ── 라이트 모드 ── */
+body.light {
+  --bg:       #f0f0f5;
+  --s1:       #ffffff;
+  --s2:       #f5f5fa;
+  --s3:       #eaeaf0;
+  --border:   #d8d8e8;
+  --border2:  #c0c0d8;
+  --text:     #1a1a2e;
+  --muted:    #8888aa;
+  --muted2:   #6666aa;
+  --sh:       0 4px 24px rgba(0,0,0,.1);
+  --sh2:      0 2px 10px rgba(0,0,0,.06);
+}
+body.light .app-header{background:rgba(240,240,245,.95);}
+body.light .bottom-nav{background:rgba(240,240,245,.97);}
+body.light .nick-modal{box-shadow:0 4px 32px rgba(0,0,0,.12);}
+/* 테마 토글 버튼 */
+.theme-toggle{
+  background:var(--s2);border:1px solid var(--border2);
+  border-radius:20px;padding:5px 10px;
+  font-size:.8rem;color:var(--text);
+  box-shadow:none;cursor:pointer;
+  transition:all .2s;
+}
+.theme-toggle:hover{border-color:var(--gold);opacity:1;transform:none;filter:none;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html{scroll-behavior:smooth;}
 body{
@@ -580,6 +606,23 @@ select option{background:var(--s2);}
 }
 .party-scale-val{color:var(--green);font-weight:700;}
 
+/* 환산값 그리드 */
+.equiv-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0;
+}
+.equiv-item{
+  background:var(--s3);border-radius:7px;padding:7px 8px;text-align:center;
+  border:1px solid var(--border);
+}
+.equiv-label{font-size:.62rem;color:var(--muted2);margin-bottom:2px;font-weight:600;}
+.equiv-val{font-family:'Black Han Sans',sans-serif;font-size:.82rem;}
+.equiv-val.cp   {color:var(--text);}
+.equiv-val.e300 {color:var(--blue);}
+.equiv-val.e380 {
+  background:linear-gradient(135deg,var(--gold2),var(--orange));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+
 /* 보스 테이블 */
 .boss-table-wrap{margin-top:8px;}
 .boss-tab-switch{display:flex;gap:6px;margin-bottom:8px;}
@@ -829,6 +872,7 @@ select option{background:var(--s2);}
       <span class="code" id="roomCodeDisp">------</span>
     </div>
     <div class="header-right">
+      <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()">🌙</button>
       <button class="btn-ghost btn-sm" onclick="copyLink()">🔗 공유</button>
       <button class="btn-ghost btn-sm" onclick="openNickModal()">✏️ 닉네임</button>
     </div>
@@ -1031,44 +1075,46 @@ select option{background:var(--s2);}
 //  BOSS DATA
 // ════════════════════════════════════════════
 // diffRank: 메이플 공식 보스 난이도표 순서 (낮을수록 쉬움)
+// icon: 보스 이모지 아이콘
+// cpReq: 입장 권장 전투력 (만 단위)
 const BOSSES=[
-  {id:'pb_c',     name:'핑크빈',     diff:'C',cycle:'weekly', meso:6_580_000,   minLv:170, diffRank:1},
-  {id:'zak_c',    name:'자쿰',       diff:'C',cycle:'weekly', meso:7_210_000,   minLv:180, diffRank:2},
-  {id:'cygnus_e', name:'시그너스',   diff:'E',cycle:'weekly', meso:4_550_000,   minLv:180, diffRank:3},
-  {id:'mag_h',    name:'매그너스',   diff:'H',cycle:'weekly', meso:14_440_000,  minLv:180, diffRank:4},
-  {id:'hilla_h',  name:'힐라',       diff:'H',cycle:'weekly', meso:5_750_000,   minLv:190, diffRank:5},
-  {id:'cygnus_n', name:'시그너스',   diff:'N',cycle:'weekly', meso:7_500_000,   minLv:190, diffRank:6},
-  {id:'pierre_c', name:'피에르',     diff:'C',cycle:'weekly', meso:13_500_000,  minLv:190, diffRank:7},
-  {id:'vellum_c', name:'벨룸',       diff:'C',cycle:'weekly', meso:13_500_000,  minLv:190, diffRank:8},
-  {id:'pap_c',    name:'파풀라투스', diff:'C',cycle:'weekly', meso:13_800_000,  minLv:190, diffRank:9},
-  {id:'lotus_n',  name:'스우',       diff:'N',cycle:'weekly', meso:17_600_000,  minLv:190, diffRank:10},
-  {id:'damian_n', name:'데미안',     diff:'N',cycle:'weekly', meso:18_400_000,  minLv:190, diffRank:11},
-  {id:'gas_n',    name:'가엔슬',     diff:'N',cycle:'weekly', meso:26_800_000,  minLv:200, diffRank:12},
-  {id:'lucid_e',  name:'루시드',     diff:'E',cycle:'weekly', meso:31_400_000,  minLv:200, diffRank:13},
-  {id:'will_e',   name:'윌',         diff:'E',cycle:'weekly', meso:34_000_000,  minLv:200, diffRank:14},
-  {id:'lucid_n',  name:'루시드',     diff:'N',cycle:'weekly', meso:37_500_000,  minLv:210, diffRank:15},
-  {id:'will_n',   name:'윌',         diff:'N',cycle:'weekly', meso:43_300_000,  minLv:210, diffRank:16},
-  {id:'dusk_n',   name:'더스크',     diff:'N',cycle:'weekly', meso:46_300_000,  minLv:210, diffRank:17},
-  {id:'dunkel_n', name:'듄켈',       diff:'N',cycle:'weekly', meso:50_000_000,  minLv:210, diffRank:18},
-  {id:'damian_h', name:'데미안',     diff:'H',cycle:'weekly', meso:51_500_000,  minLv:210, diffRank:19},
-  {id:'lotus_h',  name:'스우',       diff:'H',cycle:'weekly', meso:54_200_000,  minLv:210, diffRank:20},
-  {id:'jin_h',    name:'진 힐라',    diff:'H',cycle:'weekly', meso:68_000_000,  minLv:220, diffRank:21},
-  {id:'bm_m_n',   name:'검은 마법사',diff:'N',cycle:'monthly',meso:560_000_000, minLv:220, diffRank:22},
-  {id:'lucid_h',  name:'루시드',     diff:'H',cycle:'weekly', meso:109_600_000, minLv:220, diffRank:23},
-  {id:'will_h',   name:'윌',         diff:'H',cycle:'weekly', meso:128_000_000, minLv:220, diffRank:24},
-  {id:'bm_m_h',   name:'검은 마법사',diff:'H',cycle:'monthly',meso:1_200_000_000,minLv:235,diffRank:25},
-  {id:'dusk_h',   name:'더스크',     diff:'H',cycle:'weekly', meso:145_000_000, minLv:225, diffRank:26},
-  {id:'dunkel_h', name:'듄켈',       diff:'H',cycle:'weekly', meso:160_000_000, minLv:225, diffRank:27},
-  {id:'seren_n',  name:'세렌',       diff:'N',cycle:'weekly', meso:200_000_000, minLv:245, diffRank:28},
-  {id:'kaling_e', name:'카링',       diff:'E',cycle:'weekly', meso:280_000_000, minLv:250, diffRank:29},
-  {id:'seren_h',  name:'세렌',       diff:'H',cycle:'weekly', meso:420_000_000, minLv:260, diffRank:30},
-  {id:'kaling_n', name:'카링',       diff:'N',cycle:'weekly', meso:480_000_000, minLv:260, diffRank:31},
-  {id:'kalos_e',  name:'칼로스',     diff:'E',cycle:'weekly', meso:600_000_000, minLv:265, diffRank:32},
-  {id:'kaling_h', name:'카링',       diff:'H',cycle:'weekly', meso:900_000_000, minLv:275, diffRank:33},
-  {id:'kalos_n',  name:'칼로스',     diff:'N',cycle:'weekly', meso:1_100_000_000,minLv:275,diffRank:34},
-  {id:'limbo_n',  name:'림보',       diff:'N',cycle:'weekly', meso:1_600_000_000,minLv:280,diffRank:35},
-  {id:'kalos_h',  name:'칼로스',     diff:'H',cycle:'weekly', meso:2_200_000_000,minLv:285,diffRank:36},
-  {id:'limbo_h',  name:'림보',       diff:'H',cycle:'weekly', meso:3_500_000_000,minLv:285,diffRank:37},
+  {id:'pb_c',icon:'🩷',cpReq:700,     name:'핑크빈',     diff:'C',cycle:'weekly', meso:6_580_000,   minLv:170, diffRank:1},
+  {id:'zak_c',icon:'💀',cpReq:1000,    name:'자쿰',       diff:'C',cycle:'weekly', meso:7_210_000,   minLv:180, diffRank:2},
+  {id:'cygnus_e',icon:'🦋',cpReq:1500, name:'시그너스',   diff:'E',cycle:'weekly', meso:4_550_000,   minLv:180, diffRank:3},
+  {id:'mag_h',icon:'⚡',cpReq:2000,    name:'매그너스',   diff:'H',cycle:'weekly', meso:14_440_000,  minLv:180, diffRank:4},
+  {id:'hilla_h',icon:'🩸',cpReq:1500,  name:'힐라',       diff:'H',cycle:'weekly', meso:5_750_000,   minLv:190, diffRank:5},
+  {id:'cygnus_n',icon:'🦋',cpReq:2500, name:'시그너스',   diff:'N',cycle:'weekly', meso:7_500_000,   minLv:190, diffRank:6},
+  {id:'pierre_c',icon:'🎪',cpReq:2500, name:'피에르',     diff:'C',cycle:'weekly', meso:13_500_000,  minLv:190, diffRank:7},
+  {id:'vellum_c',icon:'🐉',cpReq:2500, name:'벨룸',       diff:'C',cycle:'weekly', meso:13_500_000,  minLv:190, diffRank:8},
+  {id:'pap_c',icon:'⏰',cpReq:2500,    name:'파풀라투스', diff:'C',cycle:'weekly', meso:13_800_000,  minLv:190, diffRank:9},
+  {id:'lotus_n',icon:'🌸',cpReq:3000,  name:'스우',       diff:'N',cycle:'weekly', meso:17_600_000,  minLv:190, diffRank:10},
+  {id:'damian_n',icon:'😈',cpReq:3000, name:'데미안',     diff:'N',cycle:'weekly', meso:18_400_000,  minLv:190, diffRank:11},
+  {id:'gas_n',icon:'🌀',cpReq:5000,    name:'가엔슬',     diff:'N',cycle:'weekly', meso:26_800_000,  minLv:200, diffRank:12},
+  {id:'lucid_e',icon:'🌙',cpReq:5000,  name:'루시드',     diff:'E',cycle:'weekly', meso:31_400_000,  minLv:200, diffRank:13},
+  {id:'will_e',icon:'🕷️',cpReq:5000,   name:'윌',         diff:'E',cycle:'weekly', meso:34_000_000,  minLv:200, diffRank:14},
+  {id:'lucid_n',icon:'🌙',cpReq:8000,  name:'루시드',     diff:'N',cycle:'weekly', meso:37_500_000,  minLv:210, diffRank:15},
+  {id:'will_n',icon:'🕷️',cpReq:8000,   name:'윌',         diff:'N',cycle:'weekly', meso:43_300_000,  minLv:210, diffRank:16},
+  {id:'dusk_n',icon:'🌑',cpReq:8000,   name:'더스크',     diff:'N',cycle:'weekly', meso:46_300_000,  minLv:210, diffRank:17},
+  {id:'dunkel_n',icon:'👁️',cpReq:8000, name:'듄켈',       diff:'N',cycle:'weekly', meso:50_000_000,  minLv:210, diffRank:18},
+  {id:'damian_h',icon:'😈',cpReq:10000, name:'데미안',     diff:'H',cycle:'weekly', meso:51_500_000,  minLv:210, diffRank:19},
+  {id:'lotus_h',icon:'🌸',cpReq:10000,  name:'스우',       diff:'H',cycle:'weekly', meso:54_200_000,  minLv:210, diffRank:20},
+  {id:'jin_h',icon:'🔥',cpReq:15000,    name:'진 힐라',    diff:'H',cycle:'weekly', meso:68_000_000,  minLv:220, diffRank:21},
+  {id:'bm_m_n',icon:'🧙',cpReq:15000,   name:'검은 마법사',diff:'N',cycle:'monthly',meso:560_000_000, minLv:220, diffRank:22},
+  {id:'lucid_h',icon:'🌙',cpReq:20000,  name:'루시드',     diff:'H',cycle:'weekly', meso:109_600_000, minLv:220, diffRank:23},
+  {id:'will_h',icon:'🕷️',cpReq:20000,   name:'윌',         diff:'H',cycle:'weekly', meso:128_000_000, minLv:220, diffRank:24},
+  {id:'bm_m_h',icon:'🧙',cpReq:30000,   name:'검은 마법사',diff:'H',cycle:'monthly',meso:1_200_000_000,minLv:235,diffRank:25},
+  {id:'dusk_h',icon:'🌑',cpReq:25000,   name:'더스크',     diff:'H',cycle:'weekly', meso:145_000_000, minLv:225, diffRank:26},
+  {id:'dunkel_h',icon:'👁️',cpReq:25000, name:'듄켈',       diff:'H',cycle:'weekly', meso:160_000_000, minLv:225, diffRank:27},
+  {id:'seren_n',icon:'☀️',cpReq:30000,  name:'세렌',       diff:'N',cycle:'weekly', meso:200_000_000, minLv:245, diffRank:28},
+  {id:'kaling_e',icon:'🌺',cpReq:35000, name:'카링',       diff:'E',cycle:'weekly', meso:280_000_000, minLv:250, diffRank:29},
+  {id:'seren_h',icon:'☀️',cpReq:50000,  name:'세렌',       diff:'H',cycle:'weekly', meso:420_000_000, minLv:260, diffRank:30},
+  {id:'kaling_n',icon:'🌺',cpReq:55000, name:'카링',       diff:'N',cycle:'weekly', meso:480_000_000, minLv:260, diffRank:31},
+  {id:'kalos_e',icon:'⚔️',cpReq:60000,  name:'칼로스',     diff:'E',cycle:'weekly', meso:600_000_000, minLv:265, diffRank:32},
+  {id:'kaling_h',icon:'🌺',cpReq:80000, name:'카링',       diff:'H',cycle:'weekly', meso:900_000_000, minLv:275, diffRank:33},
+  {id:'kalos_n',icon:'⚔️',cpReq:90000,  name:'칼로스',     diff:'N',cycle:'weekly', meso:1_100_000_000,minLv:275,diffRank:34},
+  {id:'limbo_n',icon:'🌫️',cpReq:110000,  name:'림보',       diff:'N',cycle:'weekly', meso:1_600_000_000,minLv:280,diffRank:35},
+  {id:'kalos_h',icon:'⚔️',cpReq:130000,  name:'칼로스',     diff:'H',cycle:'weekly', meso:2_200_000_000,minLv:285,diffRank:36},
+  {id:'limbo_h',icon:'🌫️',cpReq:160000,  name:'림보',       diff:'H',cycle:'weekly', meso:3_500_000_000,minLv:285,diffRank:37},
 ];
 const DL={E:'이지',N:'노멀',H:'하드',C:'카오스'};
 
@@ -1155,6 +1201,8 @@ function enterApp(code){
   renderCal();
   renderBossList();
   buildColorRow();
+  // 테마 초기화
+  initTheme();
   // 마지막 활성 탭 복원
   const lastTab=localStorage.getItem('maple_tab');
   if(lastTab){
@@ -1483,6 +1531,29 @@ async function delEv(date,id){
 // ════════════════════════════════════════════
 const PARTY_SCALE = {1:1.0, 2:0.65, 3:0.5, 4:0.42};
 
+// ── 주간보스 12마리 최적 조합 추천 ──
+// n명 파티의 equivStat으로 클리어 가능한 보스 중 메소 수익 상위 12개 선택
+function getBossRecommendation(chars, partyNo){
+  const n = Math.min(chars.length, 4);
+  const scale = PARTY_SCALE[n] || 0.42;
+  const totalEquiv = chars.reduce((s,ch)=>s+(ch.equivStat||0), 0);
+
+  // 클리어 가능한 주간보스만 필터 (여유 or 가능)
+  const possible = BOSSES
+    .filter(b => b.cycle==='weekly')
+    .filter(b => {
+      const f = getPartyBossFeasibility(chars, b.id);
+      return f==='easy' || f==='ok';
+    })
+    .sort((a,b) => b.meso - a.meso); // 메소 내림차순
+
+  // 상위 12개 선택 (주간보스 최대 클리어 횟수)
+  const top12 = possible.slice(0, 12);
+  const totalMeso = top12.reduce((s,b)=>s+b.meso, 0);
+
+  return { chars, n, scale, totalEquiv, top12, totalMeso };
+}
+
 // 파티번호별 캐릭터 집계 (members 기반)
 function getPartyGroups(){
   const groups = {1:[],2:[],3:[],4:[]};
@@ -1561,19 +1632,43 @@ const BOSS_THRESHOLDS = {
 //  EQUIV STAT 계산 (환산주스탯)
 //  넥슨 API stat_list에서 주스탯, 부스탯, 공/마력, 보스데미지% 추출
 // ════════════════════════════════════════════
+// ════════════════════════════════════════════
+//  환산주스탯 계산 (역산 검증 공식)
+//  환산(380) = 최대스탯공/10000 × (1+보공%) / 남은방어율
+//  남은방어율 = 1 - (보스방어율/100)×(1-방무/100)
+//  헥사환산(380) = 환산(380) + 헥사보정
+//  헥사보정: 헥사스탯 총레벨 × 직업배율 (기본 약 70만/Lv)
+//  검증: 매화꽃여로 54,641,082 × (1+4.7) / 0.734 / 10000 ≈ 42,432
+//        + 크뎀보정(1+크뎀%/100/1.35) 포함시 ≈ 63,762 (공식사이트)
+// ════════════════════════════════════════════
+function calcEquivStatBase(attackPower, bossPercent, ignoreDef, bossDef, critDmg){
+  const atk = attackPower||0;
+  const bossMult = 1 + (bossPercent||0)/100;
+  const def = ignoreDef||93;
+  // 남은 방어율 (실효 방어율)
+  const remainDef = 1 - (bossDef/100)*(1-def/100);
+  // 크뎀 보정: 기본크뎀 35%, 추가크뎀 반영 (1.35 + critDmg/100)
+  const critMult = (1.35 + (critDmg||0)/100) / 1.35;
+  return atk * bossMult / Math.max(remainDef, 0.01) * critMult;
+}
+
 function calcEquivStat(statList, attackPower, bossPercent, hexaStat, ignoreDef){
-  // 환산주스탯 (보스380 기준 근사)
-  // = 최대 스탯공격력 × (1 + 보스데미지%) × 방무보정 / 10000
-  // 방무보정: 보스380 기준, 방어율무시 n% 적용 시 = 1 - 0.38×(1 - n/100)
-  // 방무 미입력 시 방어율무시 93% 근사값 사용 (현 메타 평균)
-  const statAtk = attackPower||0;
-  const bossMult = 1 + ((bossPercent||0)/100);
-  const def = ignoreDef||93; // 방어율 무시 %
-  const defMult = 1 - 0.38*(1 - def/100); // 보스380 기준 방무보정
-  const base = statAtk * bossMult * defMult;
-  // 헥사스탯 총레벨: 환산사이트 기준 약 1레벨당 ~150 환산치 (근사)
-  const hexaBonus = (hexaStat||0) * 1500;
-  return Math.round((base + hexaBonus) / 10000);
+  const base380 = calcEquivStatBase(attackPower, bossPercent, ignoreDef, 380, 0);
+  const hexaBonus = (hexaStat||0) * 70 * 10000;
+  return Math.round((base380 + hexaBonus) / 10000);
+}
+
+function calcAllEquiv(attackPower, bossPercent, hexaStat, ignoreDef, combatPower, critDmg){
+  const base300 = calcEquivStatBase(attackPower, bossPercent, ignoreDef, 300, critDmg);
+  const base380 = calcEquivStatBase(attackPower, bossPercent, ignoreDef, 380, critDmg);
+  return {
+    combat: combatPower||0,                  // 인게임 전투력
+    e300:   Math.round(base300 / 10000),     // 환산(300) ← 보스300 기준
+    e380:   Math.round(base380 / 10000),     // 환산(380) ← 보스380 기준 (메인)
+    hexaLv: hexaStat||0,                     // 헥사스탯 총레벨 (참고용)
+    // h380은 직업별 헥사 효율 차이로 정확 계산 불가 → e380으로 대체
+    h380:   Math.round(base380 / 10000),
+  };
 }
 
 function getBossFeasibility(equivStat, bossId, memberCount){
@@ -1679,7 +1774,8 @@ async function registerChar(){
 
     const charId='c'+Date.now().toString(36);
     const hexaStat = hexaStatTotal;
-    const equivStat=calcEquivStat(statList, attackPower, bossPercent, hexaStat, ignoreDef);
+    const allEquiv=calcAllEquiv(attackPower, bossPercent, hexaStat, ignoreDef, combatPower, critDmg||0);
+    const equivStat=allEquiv.e380;
     // 디버그 로그 (F12 콘솔에서 확인)
     console.log('[캐릭터 등록]', {
       charName: info.character_name,
@@ -1698,7 +1794,7 @@ async function registerChar(){
       charLevel:info.character_level||0,
       charImage:info.character_image||'',
       charWorld:info.world_name||'-',
-      statList, attackPower:statAttack, bossPercent, ignoreDef,
+      statList, attackPower:statAttack, bossPercent, ignoreDef, combatPower, allEquiv,
       hexaStat,
       hexaStatTotal,
       hexaCoreTotal,
@@ -1767,7 +1863,11 @@ async function refreshChar(uid, charId, charName){
       hexaCoreTotal=hexaCoreData.reduce((s,c)=>s+(c.hexa_core_level||c.core_level||0),0);
     }
     const hexaStat=hexaStatTotal;
-    const equivStat=calcEquivStat(statList,statAttack,bossPercent,hexaStat);
+    const ignoreDef2=sm['방어율 무시']||0;
+    const critDmg2=sm['크리티컬 데미지']||sm['크리티컬데미지']||0;
+    const combatPower2=sm['전투력']||0;
+    const allEquiv=calcAllEquiv(statAttack,bossPercent,hexaStat,ignoreDef2,combatPower2,critDmg2);
+    const equivStat=allEquiv.e380;
     const existing=await fbGet(`rooms/${roomCode}/members/${uid}`)||{};
     const chars=existing.chars||{};
     if(chars[charId]){
@@ -1883,12 +1983,26 @@ function renderCharCard(uid, charId, ch, isMe){
       </div>
     </div>
     <div class="char-stat-row">
-      <div class="char-stat">⚔️ 공/마 <b>${(ch.attackPower||0).toLocaleString()}</b></div>
       <div class="char-stat">🎯 보공 <b>${(ch.bossPercent||0).toFixed(0)}%</b></div>
+      <div class="char-stat">🛡 방무 <b>${(ch.ignoreDef||0).toFixed(0)}%</b></div>
       <div class="char-stat">🔷 헥사스탯 <b>Lv.${ch.hexaStatTotal||0}</b></div>
       <div class="char-stat">⚡ 6차코어 <b>Lv.${ch.hexaCoreTotal||0}</b></div>
     </div>
-    <div class="char-equiv">환산주스탯: ${equivStat.toLocaleString()}만</div>
+    <!-- 전투력 / 환산값 3종 표시 -->
+    <div class="equiv-grid">
+      <div class="equiv-item">
+        <div class="equiv-label">전투력</div>
+        <div class="equiv-val cp">${fmtCP(ch.allEquiv?.combat||ch.combatPower||0)}</div>
+      </div>
+      <div class="equiv-item">
+        <div class="equiv-label">환산(300)</div>
+        <div class="equiv-val e300">${(ch.allEquiv?.e300||0).toLocaleString()}</div>
+      </div>
+      <div class="equiv-item">
+        <div class="equiv-label">환산(380)</div>
+        <div class="equiv-val e380">${equivStat.toLocaleString()}</div>
+      </div>
+    </div>
     ${isMyUid?`
     <div class="party-selector">
       <span class="party-selector-label">파티</span>
@@ -1979,73 +2093,68 @@ function renderMembers(){
 function renderRec(){
   const el=document.getElementById('recContent');
   const groups=getPartyGroups();
+  const PARTY_COLORS=['','var(--gold)','#60a0f5','#3ecf8e','#a060f5'];
   const hasAny=Object.values(groups).some(g=>g.length>0);
   if(!hasAny){
     el.innerHTML='<div class="empty"><span class="icon">🗺</span>파티원 탭에서 캐릭터를 먼저 등록해주세요</div>';
     return;
   }
 
-  const PARTY_COLORS=['','var(--gold)','#60a0f5','#3ecf8e','#a060f5'];
-  const sorted=[...BOSSES].sort((a,b)=>b.meso-a.meso);
-  const maxMeso=Math.max(...sorted.map(b=>b.meso));
-
-  function bossCard(b, chars){
-    const n=Math.min(chars.length,4);
-    const scale=PARTY_SCALE[n]||0.42;
-    const totalEquiv=chars.reduce((s,ch)=>s+(ch.equivStat||0),0);
-    const effectiveEquiv=Math.round(totalEquiv*scale);
-    const f=getPartyBossFeasibility(chars,b.id);
-    if(!f) return '';
-    const pct=Math.min(100,(b.meso/maxMeso)*100);
-    const fLabel=f==='easy'?'<span class="bf-badge bf-easy">✅ 여유</span>':
-                 f==='ok'  ?'<span class="bf-badge bf-ok">🔵 가능</span>':
-                            '<span class="bf-badge bf-no">❌ 불가</span>';
-    return `<div class="rec-card${f!=='no'?' all-ok':''}">
-      <div class="rec-boss-header">
-        <div class="rec-boss-name">${b.name}</div>
-        <div class="diff-badge diff-${b.diff}">${DL[b.diff]}</div>
-        ${b.cycle==='monthly'?'<span class="chip chip-purple" style="font-size:.58rem;padding:1px 6px;">월간</span>':''}
-        <div style="margin-left:auto;">${fLabel}</div>
-      </div>
-      <div class="rec-meso">💰 ${fmtShort(b.meso)} / 회</div>
-      <div class="meso-bar-wrap">
-        <div class="meso-bar-lbl">
-          <span>${n}인×${scale} → 유효 ${effectiveEquiv.toLocaleString()}만</span>
-        </div>
-        <div class="meso-bar"><div class="meso-bar-fill" style="width:${pct.toFixed(1)}%"></div></div>
-      </div>
-      <div class="rec-members" style="margin-top:6px;">
-        ${chars.map(ch=>`<span class="rec-chip ok">${ch.charName||'?'}</span>`).join('')}
-      </div>
-    </div>`;
-  }
-
-  const partyHtml = Object.entries(groups)
+  const partyHtml=Object.entries(groups)
     .filter(([p,chars])=>chars.length>0)
     .map(([p,chars])=>{
-      const n=Math.min(chars.length,4);
-      const scale=PARTY_SCALE[n]||0.42;
-      const easy=[],ok=[],no=[];
-      sorted.forEach(b=>{
+      const rec=getBossRecommendation(chars, p);
+      const {n, scale, top12, totalMeso}=rec;
+      const rows=top12.map((b,i)=>{
         const f=getPartyBossFeasibility(chars,b.id);
-        if(f==='easy') easy.push(b);
-        else if(f==='ok') ok.push(b);
-        else if(f==='no') no.push(b);
-      });
-      return `
-        <div style="margin-bottom:28px;">
-          <div style="font-family:'Black Han Sans',sans-serif;font-size:1rem;
-            color:${PARTY_COLORS[p]};margin-bottom:14px;display:flex;align-items:center;gap:8px;">
-            ${p}파티
-            <span style="font-size:.72rem;color:var(--muted2);font-family:'Noto Sans KR',sans-serif;">
-              ${n}명 · ${n}인 배율 ×${scale}
-            </span>
-          </div>
-          <div class="rec-section">✅ 여유 클리어 (${easy.length}개)</div>
-          <div class="rec-grid">${easy.map(b=>bossCard(b,chars)).join('')||'<div class="empty">해당 없음</div>'}</div>
-          <div class="rec-section">🔵 클리어 가능 (${ok.length}개)</div>
-          <div class="rec-grid">${ok.map(b=>bossCard(b,chars)).join('')||'<div class="empty">해당 없음</div>'}</div>
-        </div>`;
+        const fBadge=f==='easy'?'<span class="bf-badge bf-easy">여유</span>':'<span class="bf-badge bf-ok">가능</span>';
+        return `<tr>
+          <td style="text-align:center;font-size:1rem">${b.icon||'⚔️'}</td>
+          <td>
+            <span style="font-weight:600">${b.name}</span>
+            <span class="diff-badge diff-${b.diff}" style="margin-left:4px">${DL[b.diff]}</span>
+            ${b.cycle==='monthly'?'<span style="font-size:.55rem;color:var(--purple);margin-left:2px;">월</span>':''}
+          </td>
+          <td style="text-align:right;font-family:'Black Han Sans',sans-serif;color:var(--gold)">
+            ${fmtShort(b.meso)}
+          </td>
+          <td style="text-align:center">${fBadge}</td>
+        </tr>`;
+      }).join('');
+
+      return `<div class="card" style="margin-bottom:14px;">
+        <div class="card-title" style="color:${PARTY_COLORS[p]}">
+          ${p}파티 추천 보스
+          <span style="font-size:.72rem;color:var(--muted2);font-family:'Noto Sans KR',sans-serif;font-weight:400">
+            ${n}명 · ×${scale} 배율
+          </span>
+          <span class="badge" style="margin-left:auto">주간 ${top12.length}마리</span>
+        </div>
+        <!-- 파티원 -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+          ${chars.map(ch=>`<span class="chip chip-gold">${ch.charName||'?'} <b>${(ch.equivStat||0).toLocaleString()}만</b></span>`).join('')}
+        </div>
+        <!-- 보스 표 -->
+        <table class="boss-table" style="margin-bottom:10px;">
+          <thead><tr>
+            <th style="width:36px"></th>
+            <th>보스</th>
+            <th style="text-align:right">메소</th>
+            <th style="text-align:center">판정</th>
+          </tr></thead>
+          <tbody>${rows||'<tr><td colspan="4" style="text-align:center;color:var(--muted2);padding:12px;">클리어 가능한 주간보스가 없어요</td></tr>'}</tbody>
+        </table>
+        <!-- 주간 합계 -->
+        <div style="display:flex;justify-content:space-between;align-items:center;
+          background:var(--s3);border-radius:8px;padding:10px 14px;">
+          <span style="font-size:.8rem;color:var(--muted2);">주간 최대 수익 (${top12.length}마리)</span>
+          <span style="font-family:'Black Han Sans',sans-serif;font-size:1rem;
+            background:linear-gradient(135deg,var(--gold2),var(--orange));
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+            ${fmtMeso(totalMeso)}
+          </span>
+        </div>
+      </div>`;
     }).join('');
 
   el.innerHTML=partyHtml;
@@ -2149,10 +2258,33 @@ function fmtShort(n){
   if(n>=1e4) return(n/1e4).toFixed(0)+'만';
   return n.toLocaleString();
 }
+function fmtCP(n){
+  // 전투력 표기 (만 단위)
+  if(!n) return '-';
+  if(n>=100000000) return (n/100000000).toFixed(0)+'억만';
+  if(n>=10000) return Math.floor(n/10000).toLocaleString()+'만';
+  return n.toLocaleString();
+}
+
 function fmtDate(d){
   return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 function yesterday(offset=1){const d=new Date();d.setDate(d.getDate()-offset);return fmtDate(d);}
+
+// ── 테마 토글 ──
+function toggleTheme(){
+  const isLight=document.body.classList.toggle('light');
+  localStorage.setItem('maple_theme', isLight?'light':'dark');
+  document.getElementById('themeBtn').textContent=isLight?'☀️':'🌙';
+}
+function initTheme(){
+  const saved=localStorage.getItem('maple_theme');
+  if(saved==='light'){
+    document.body.classList.add('light');
+    const btn=document.getElementById('themeBtn');
+    if(btn) btn.textContent='☀️';
+  }
+}
 
 let _toastT;
 function toast(msg){

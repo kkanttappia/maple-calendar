@@ -1,8 +1,0 @@
-[build]
-  publish = "."
-  functions = "netlify/functions"
-
-[[redirects]]
-  from = "/api/nexon/*"
-  to = "/.netlify/functions/nexon-proxy"
-  status = 200

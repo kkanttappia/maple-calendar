@@ -433,26 +433,92 @@ select option{background:var(--s2);}
 .rep-chip.sel-rep{border-color:var(--gold);color:var(--gold);background:rgba(245,166,35,.1);}
 
 /* ══════════════════════════════════════════
-   MEMBERS
+   MEMBERS & CHARACTERS
 ══════════════════════════════════════════ */
-.members-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
-  gap:12px;margin-top:14px;
+.members-layout{display:flex;flex-direction:column;gap:16px;margin-top:16px;}
+.member-section{
+  background:var(--s1);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;
 }
-.member-card{
-  background:var(--s2);border:1.5px solid var(--border);
-  border-radius:var(--r);padding:14px;
-  display:flex;flex-direction:column;gap:10px;
-  position:relative;transition:border-color .15s;
+.member-section.is-me{border-color:var(--gold);}
+.member-section-header{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 16px;background:var(--s2);
+  border-bottom:1px solid var(--border);
 }
-.member-card.is-me{border-color:var(--gold);}
+.member-section-nick{
+  font-family:'Black Han Sans',sans-serif;font-size:.95rem;color:var(--text);
+}
 .me-badge{
-  position:absolute;top:10px;right:10px;
   font-size:.6rem;padding:2px 7px;border-radius:10px;
   background:rgba(245,166,35,.15);color:var(--gold);font-weight:700;
 }
-.member-avatar-row{display:flex;align-items:center;gap:10px;}
+.char-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:10px;padding:12px;
+}
+.char-card{
+  background:var(--s2);border:1.5px solid var(--border);
+  border-radius:var(--r2);padding:12px;
+  display:flex;flex-direction:column;gap:8px;
+  position:relative;transition:border-color .15s;
+}
+.char-card:hover{border-color:var(--border2);}
+.char-avatar-row{display:flex;align-items:center;gap:10px;}
+.char-img{
+  width:52px;height:52px;object-fit:contain;
+  image-rendering:pixelated;border-radius:7px;
+  background:var(--bg);flex-shrink:0;border:1px solid var(--border);
+}
+.char-img-ph{
+  width:52px;height:52px;border-radius:7px;
+  background:var(--s3);display:flex;align-items:center;
+  justify-content:center;font-size:1.3rem;
+  border:1px solid var(--border);flex-shrink:0;
+}
+.char-name{
+  font-family:'Black Han Sans',sans-serif;font-size:.9rem;
+  background:linear-gradient(135deg,var(--gold2),var(--orange));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.char-meta{font-size:.7rem;color:var(--muted2);line-height:1.7;margin-top:1px;}
+.char-meta b{color:var(--text);}
+.char-stat-row{
+  display:flex;gap:6px;flex-wrap:wrap;
+}
+.char-stat{
+  font-size:.67rem;padding:2px 7px;border-radius:10px;
+  background:var(--s3);color:var(--muted2);
+}
+.char-stat b{color:var(--gold);}
+.char-hexa-row{
+  display:flex;align-items:center;gap:6px;
+}
+.char-hexa-input{
+  width:80px;padding:4px 8px;font-size:.75rem;
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:5px;color:var(--text);
+}
+.char-hexa-label{font-size:.7rem;color:var(--muted2);}
+.char-equiv{
+  font-family:'Black Han Sans',sans-serif;font-size:.8rem;
+  color:var(--gold);
+}
+.char-del-btn{
+  position:absolute;top:8px;right:8px;
+  background:none;border:none;color:var(--muted);
+  font-size:.8rem;padding:3px 6px;border-radius:4px;
+  box-shadow:none;
+}
+.char-del-btn:hover{color:var(--red);background:rgba(240,96,96,.1);opacity:1;transform:none;filter:none;}
+.add-char-btn{
+  margin:0 12px 12px;width:calc(100% - 24px);
+  background:var(--s3);color:var(--muted2);
+  border:1.5px dashed var(--border2);
+  box-shadow:none;font-size:.8rem;padding:9px;
+}
+.add-char-btn:hover{border-color:var(--gold);color:var(--gold);opacity:1;filter:none;}
 .member-img{
   width:54px;height:54px;object-fit:contain;
   image-rendering:pixelated;border-radius:8px;
@@ -464,15 +530,17 @@ select option{background:var(--s2);}
   justify-content:center;font-size:1.4rem;
   border:1px solid var(--border);flex-shrink:0;
 }
-.member-name{
-  font-family:'Black Han Sans',sans-serif;font-size:.95rem;
-  background:linear-gradient(135deg,var(--gold2),var(--orange));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+/* 보스 가능여부 뱃지 */
+.boss-feasibility{display:flex;flex-direction:column;gap:6px;margin-top:4px;}
+.bf-row{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:.68rem;}
+.bf-boss{color:var(--muted2);flex:1;}
+.bf-badge{
+  font-size:.62rem;padding:2px 7px;border-radius:10px;
+  font-weight:700;white-space:nowrap;
 }
-.member-meta{font-size:.72rem;color:var(--muted2);line-height:1.7;margin-top:2px;}
-.member-meta b{color:var(--text);}
-.member-nick{font-size:.72rem;color:var(--muted2);}
-.member-nick b{color:var(--text);}
+.bf-easy  {background:rgba(62,207,142,.2);color:var(--green);}
+.bf-ok    {background:rgba(96,160,245,.2);color:var(--blue);}
+.bf-no    {background:rgba(240,96,96,.15);color:var(--red);}
 
 /* ══════════════════════════════════════════
    BOSS RECOMMEND
@@ -723,29 +791,27 @@ select option{background:var(--s2);}
   </div>
 
   <div id="membersPage" class="page">
+    <!-- 내 캐릭터 추가 카드 -->
     <div class="card">
-      <div class="card-title">🔑 내 캐릭터 등록</div>
+      <div class="card-title">🔑 캐릭터 추가</div>
       <div class="api-notice">
-        <b>API Key 발급</b>: <a href="https://openapi.nexon.com" target="_blank">openapi.nexon.com</a>에서 앱 등록 후 발급 · Key는 본인 기기에만 저장됩니다
+        캐릭터명을 입력하면 레벨, 직업, 헥사스탯, 환산주스탯이 자동으로 불러와져요 🍁
       </div>
-      <div class="form-row" style="flex-wrap:wrap;gap:10px;">
-        <div style="flex:1;min-width:160px;">
-          <label class="lbl">API Key</label>
-          <input type="text" id="apiKeyInput" placeholder="x-nxopen-api-key">
-        </div>
-        <div style="flex:1;min-width:120px;">
+      <div class="form-row" style="gap:10px;">
+        <div style="flex:1;">
           <label class="lbl">캐릭터명</label>
-          <input type="text" id="charNameInput" placeholder="캐릭터명"
+          <input type="text" id="charNameInput" placeholder="캐릭터명 입력"
             onkeydown="if(event.key==='Enter')registerChar()">
         </div>
         <div class="shrink" style="padding-top:20px;">
-          <button id="regBtn" onclick="registerChar()">등록</button>
+          <button id="regBtn" onclick="registerChar()">추가</button>
         </div>
       </div>
       <div class="err-msg" id="charErr"></div>
     </div>
-    <div class="members-grid" id="membersGrid">
-      <div class="empty" style="grid-column:1/-1;"><span class="icon">👥</span>파티원이 없어요<br><small>위에서 캐릭터를 등록해주세요</small></div>
+    <!-- 파티원 목록 -->
+    <div class="members-layout" id="membersGrid">
+      <div class="empty"><span class="icon">👥</span>캐릭터를 추가해주세요</div>
     </div>
   </div>
 
@@ -989,28 +1055,36 @@ async function submitNick(){
     const code=code6();
     await fbSet(`rooms/${code}/meta`,{at:Date.now()});
     roomCode=code;
-    localStorage.setItem('maple_room',code);
   }
   await fbSet(`rooms/${roomCode}/members/${myUid}`,{nickname:myNick});
-  document.getElementById('roomCodeDisp').textContent=roomCode;
   closeNickModal();
+  // enterApp으로 Firebase 리스너 등록 (캘린더 실시간 동기화 핵심)
+  enterApp(roomCode);
   toast('👋 환영해요, '+myNick+'!');
 }
 
 function enterApp(code){
   roomCode=code;
   document.getElementById('roomCodeDisp').textContent=code;
-  const now=new Date(); calY=now.getFullYear(); calM=now.getMonth();
+  // calY/calM이 설정 안 된 경우 항상 초기화
+  if(!calY){ const now=new Date(); calY=now.getFullYear(); calM=now.getMonth(); }
   const url=new URL(location.href);
   url.searchParams.set('room',code);
   history.replaceState({},'',url);
   localStorage.setItem('maple_room',code);
   localStorage.setItem('maple_nick',myNick);
   localStorage.setItem('maple_uid',myUid);
-  // 기존 리스너 정리 후 재등록
+  // 기존 리스너 정리 후 재등록 (중복 방지)
   fbUnsubs.forEach(u=>u()); fbUnsubs=[];
-  fbOn(`rooms/${code}/events`,v=>{events=v||{};renderCal();renderUpcoming();});
-  fbOn(`rooms/${code}/members`,v=>{members=v||{};renderMembers();});
+  fbOn(`rooms/${code}/events`,v=>{
+    events=v||{};
+    renderCal();
+    renderUpcoming();
+  });
+  fbOn(`rooms/${code}/members`,v=>{
+    members=v||{};
+    renderMembers();
+  });
   renderCal();
   renderBossList();
   buildColorRow();
@@ -1062,10 +1136,9 @@ window.addEventListener('firebase-ready',async()=>{
 
   // 닉네임 없는 경우 → 닉네임 모달 표시
   if(savedNick) document.getElementById('nickInput').value=savedNick;
-  openNickModal();
-  renderCal(); renderBossList(); buildColorRow();
   const now=new Date(); calY=now.getFullYear(); calM=now.getMonth();
-  renderCal();
+  renderCal(); renderBossList(); buildColorRow();
+  openNickModal();
 });
 
 // ════════════════════════════════════════════
@@ -1321,65 +1394,270 @@ async function delEv(date,id){
 }
 
 // ════════════════════════════════════════════
+//  BOSS FEASIBILITY DATA (환산주스탯 기준, 커뮤니티 기준값)
+//  솔플 기준: {easy: 10분이내, ok: 제한시간내, no: 불가}
+//  파티(4인) 기준: 솔플 기준의 약 40% 수준
+// ════════════════════════════════════════════
+const BOSS_THRESHOLDS = {
+  // id: { solo: {easy, ok}, party: {easy, ok} }  (단위: 만 환산주스탯)
+  'cygnus_e':  {solo:{easy:3000, ok:2000},  party:{easy:1500,ok:1000}},
+  'cygnus_n':  {solo:{easy:5000, ok:3500},  party:{easy:2000,ok:1500}},
+  'hilla_h':   {solo:{easy:4000, ok:2500},  party:{easy:1800,ok:1200}},
+  'pb_c':      {solo:{easy:4000, ok:2500},  party:{easy:1800,ok:1200}},
+  'zak_c':     {solo:{easy:4500, ok:3000},  party:{easy:2000,ok:1300}},
+  'pierre_c':  {solo:{easy:5000, ok:3500},  party:{easy:2200,ok:1500}},
+  'vellum_c':  {solo:{easy:5000, ok:3500},  party:{easy:2200,ok:1500}},
+  'pap_c':     {solo:{easy:5000, ok:3500},  party:{easy:2200,ok:1500}},
+  'mag_h':     {solo:{easy:6000, ok:4000},  party:{easy:2500,ok:1800}},
+  'lotus_n':   {solo:{easy:8000, ok:5500},  party:{easy:3500,ok:2500}},
+  'damian_n':  {solo:{easy:8000, ok:5500},  party:{easy:3500,ok:2500}},
+  'gas_n':     {solo:{easy:12000,ok:8000},  party:{easy:5000,ok:3500}},
+  'lucid_e':   {solo:{easy:10000,ok:7000},  party:{easy:4500,ok:3000}},
+  'will_e':    {solo:{easy:10000,ok:7000},  party:{easy:4500,ok:3000}},
+  'lucid_n':   {solo:{easy:15000,ok:10000}, party:{easy:6500,ok:4500}},
+  'will_n':    {solo:{easy:15000,ok:10000}, party:{easy:6500,ok:4500}},
+  'dusk_n':    {solo:{easy:18000,ok:12000}, party:{easy:8000,ok:5500}},
+  'dunkel_n':  {solo:{easy:18000,ok:12000}, party:{easy:8000,ok:5500}},
+  'damian_h':  {solo:{easy:20000,ok:14000}, party:{easy:8500,ok:6000}},
+  'lotus_h':   {solo:{easy:20000,ok:14000}, party:{easy:8500,ok:6000}},
+  'jin_h':     {solo:{easy:30000,ok:20000}, party:{easy:13000,ok:9000}},
+  'lucid_h':   {solo:{easy:40000,ok:28000}, party:{easy:17000,ok:12000}},
+  'will_h':    {solo:{easy:40000,ok:28000}, party:{easy:17000,ok:12000}},
+  'dusk_h':    {solo:{easy:55000,ok:38000}, party:{easy:23000,ok:16000}},
+  'dunkel_h':  {solo:{easy:55000,ok:38000}, party:{easy:23000,ok:16000}},
+  'seren_n':   {solo:{easy:70000,ok:50000}, party:{easy:30000,ok:21000}},
+  'kaling_e':  {solo:{easy:80000,ok:58000}, party:{easy:34000,ok:24000}},
+  'seren_h':   {solo:{easy:130000,ok:90000},party:{easy:55000,ok:38000}},
+  'kaling_n':  {solo:{easy:140000,ok:100000},party:{easy:60000,ok:42000}},
+  'kalos_e':   {solo:{easy:160000,ok:115000},party:{easy:68000,ok:48000}},
+  'kaling_h':  {solo:{easy:250000,ok:180000},party:{easy:105000,ok:75000}},
+  'kalos_n':   {solo:{easy:280000,ok:200000},party:{easy:120000,ok:85000}},
+  'bm_m_n':    {solo:{easy:150000,ok:110000},party:{easy:65000,ok:46000}},
+  'limbo_n':   {solo:{easy:380000,ok:270000},party:{easy:160000,ok:113000}},
+  'kalos_h':   {solo:{easy:500000,ok:360000},party:{easy:210000,ok:150000}},
+  'bm_m_h':    {solo:{easy:400000,ok:290000},party:{easy:170000,ok:120000}},
+  'limbo_h':   {solo:{easy:700000,ok:500000},party:{easy:295000,ok:210000}},
+};
+
+// ════════════════════════════════════════════
+//  EQUIV STAT 계산 (환산주스탯)
+//  넥슨 API stat_list에서 주스탯, 부스탯, 공/마력, 보스데미지% 추출
+// ════════════════════════════════════════════
+function calcEquivStat(statList, attackPower, bossPercent, hexaStat){
+  // 스탯 맵 생성
+  const sm={};
+  if(statList) statList.forEach(s=>{ sm[s.stat_type]=parseFloat(s.stat_value)||0; });
+  // 직업별 주/부스탯 결정은 공격력/마력으로 판단
+  const atk = Math.max(attackPower||0, sm['최대 마력']||0, sm['최대 공격력']||0);
+  // 주스탯 (STR/DEX/INT/LUK 중 최대)
+  const mainStat = Math.max(sm['STR']||0, sm['DEX']||0, sm['INT']||0, sm['LUK']||0);
+  // 부스탯 (주스탯 제외 합산)
+  const allStats = (sm['STR']||0)+(sm['DEX']||0)+(sm['INT']||0)+(sm['LUK']||0);
+  const subStat = allStats - mainStat;
+  // 보스 데미지 보정 (기본 100% 기준)
+  const bossDmg = 1 + ((bossPercent||0)/100);
+  // 환산주스탯 공식 (만 단위)
+  // = (주스탯 + 부스탯×0.2 + 공/마×4) × 보스배율 / 10000 + 헥사보정
+  const base = (mainStat + subStat*0.2 + atk*4) * bossDmg;
+  const hexaBonus = (hexaStat||0) * 1000; // 헥사스탯 1당 1000 환산
+  return Math.round((base + hexaBonus) / 10000);
+}
+
+function getBossFeasibility(equivStat, bossId, memberCount){
+  const th = BOSS_THRESHOLDS[bossId];
+  if(!th) return null;
+  const mode = memberCount <= 1 ? 'solo' : 'party';
+  const t = th[mode];
+  if(equivStat >= t.easy) return 'easy';
+  if(equivStat >= t.ok)   return 'ok';
+  return 'no';
+}
+
+// ════════════════════════════════════════════
 //  MEMBERS
 // ════════════════════════════════════════════
+
+// members 구조: rooms/{code}/members/{uid}/
+//   nickname, chars: { charId: { charName, charClass, charLevel, charImage,
+//     charWorld, statList, attackPower, bossPercent, hexaStat, equivStat } }
+
 async function registerChar(){
-  const apiKey=document.getElementById('apiKeyInput').value.trim();
   const name=document.getElementById('charNameInput').value.trim();
   const errEl=document.getElementById('charErr');
   errEl.textContent='';
-  if(!apiKey){errEl.textContent='API Key를 입력해주세요';return;}
   if(!name){errEl.textContent='캐릭터명을 입력해주세요';return;}
   const btn=document.getElementById('regBtn');
   btn.disabled=true;
   btn.innerHTML='<span class="spin"></span>조회중';
   try{
     const BASE='/api/nexon/maplestory/v1';
-    const H={'x-nxopen-api-key':apiKey};
+    const H={};  // API Key는 서버에서 자동 적용
+    const dt=yesterday();
+
+    // ocid
     const oRes=await fetch(`${BASE}/id?character_name=${encodeURIComponent(name)}`,{headers:H});
     if(!oRes.ok) throw new Error('캐릭터를 찾을 수 없습니다');
     const {ocid}=await oRes.json();
-    const iRes=await fetch(`${BASE}/character/basic?ocid=${ocid}&date=${yesterday()}`,{headers:H});
-    if(!iRes.ok) throw new Error('캐릭터 정보 조회 실패');
-    const info=await iRes.json();
-    await fbSet(`rooms/${roomCode}/members/${myUid}`,{
-      nickname:myNick,
+
+    // 기본 정보 + 스탯 + 헥사스탯 + 헥사코어 병렬 조회
+    const [iRes, sRes, hStatRes, hMatRes] = await Promise.all([
+      fetch(`${BASE}/character/basic?ocid=${ocid}&date=${dt}`,{headers:H}),
+      fetch(`${BASE}/character/stat?ocid=${ocid}&date=${dt}`,{headers:H}),
+      fetch(`${BASE}/character/hexamatrix-stat?ocid=${ocid}&date=${dt}`,{headers:H}),
+      fetch(`${BASE}/character/hexamatrix?ocid=${ocid}&date=${dt}`,{headers:H}),
+    ]);
+    if(!iRes.ok) throw new Error('기본 정보 조회 실패');
+    const info = await iRes.json();
+
+    // 스탯
+    let statList=[], attackPower=0, bossPercent=0;
+    if(sRes.ok){
+      const sd=await sRes.json();
+      statList = sd.final_stat||[];
+      const sm={};
+      statList.forEach(s=>{ sm[s.stat_type]=parseFloat(s.stat_value)||0; });
+      attackPower = Math.max(sm['최대 공격력']||0, sm['최대 마력']||0);
+      bossPercent = sm['보스 몬스터 데미지']||0;
+    }
+
+    // 헥사스탯 자동 조회
+    let hexaStatData=[], hexaStatTotal=0;
+    if(hStatRes.ok){
+      const hsd=await hStatRes.json();
+      hexaStatData = hsd.character_hexa_stat_core||[];
+      // 헥사스탯 총 레벨 합산 (주스탯 + 보공 등 모든 코어)
+      hexaStatTotal = hexaStatData.reduce((sum,core)=>{
+        return sum+(core.stat_level||0)+(core.stat_level2||0)+(core.stat_level3||0);
+      },0);
+    }
+
+    // 헥사코어(6차 강화) 자동 조회
+    let hexaCoreData=[], hexaCoreTotal=0;
+    if(hMatRes.ok){
+      const hmd=await hMatRes.json();
+      hexaCoreData = hmd.character_hexa_core_equipment||[];
+      // 6차 코어 레벨 합산
+      hexaCoreTotal = hexaCoreData.reduce((sum,core)=>{
+        return sum+(core.hexa_core_level||0);
+      },0);
+    }
+
+    const charId='c'+Date.now().toString(36);
+    // 헥사스탯 레벨 합산을 환산치에 반영
+    const hexaStat = hexaStatTotal;
+    const equivStat=calcEquivStat(statList, attackPower, bossPercent, hexaStat);
+
+    // 내 멤버 데이터 가져와서 chars에 추가
+    const existing=await fbGet(`rooms/${roomCode}/members/${myUid}`)||{};
+    const chars=existing.chars||{};
+    chars[charId]={
       charName:info.character_name||name,
       charClass:info.character_class||'-',
       charLevel:info.character_level||0,
       charImage:info.character_image||'',
       charWorld:info.world_name||'-',
+      statList, attackPower, bossPercent,
+      hexaStat,
+      hexaStatTotal,
+      hexaCoreTotal,
+      hexaStatData: hexaStatData.slice(0,5),
+      hexaCoreData:  hexaCoreData.slice(0,5),
+      equivStat,
+    };
+    await fbSet(`rooms/${roomCode}/members/${myUid}`,{
+      ...existing,
+      nickname:myNick,
+      chars,
     });
-    toast('✅ 캐릭터가 등록됐어요!');
+    document.getElementById('charNameInput').value='';
+    const hexaMsg = hexaStatTotal>0 ? ` (헥사스탯 Lv.${hexaStatTotal}, 6차코어 Lv.${hexaCoreTotal})` : '';
+    toast('✅ '+(info.character_name||name)+'이(가) 추가됐어요!'+hexaMsg);
   }catch(e){errEl.textContent='⚠ '+e.message;}
-  finally{btn.disabled=false;btn.textContent='등록';}
+  finally{btn.disabled=false;btn.textContent='추가';}
+}
+
+async function deleteChar(uid, charId){
+  const existing=await fbGet(`rooms/${roomCode}/members/${uid}`)||{};
+  const chars=existing.chars||{};
+  delete chars[charId];
+  await fbSet(`rooms/${roomCode}/members/${uid}`,{...existing,chars});
+  toast('🗑 캐릭터가 삭제됐어요');
+}
+
+// updateHexaStat 제거 (API 자동조회로 대체)
+
+function getBossLabel(f){
+  if(f==='easy') return '<span class="bf-badge bf-easy">✅ 여유</span>';
+  if(f==='ok')   return '<span class="bf-badge bf-ok">🔵 가능</span>';
+  return '<span class="bf-badge bf-no">❌ 불가</span>';
+}
+
+function renderCharCard(uid, charId, ch, isMe){
+  const isMyUid = uid===myUid;
+  const equivStat=ch.equivStat||0;
+  const memberCount=Object.keys(members).length;
+
+  // 보스 가능여부 상위 5개만 표시 (메소 순)
+  const topBosses=BOSSES.slice().sort((a,b)=>b.meso-a.meso).slice(0,8);
+  const feasRows=topBosses.map(b=>{
+    const f=getBossFeasibility(equivStat, b.id, 1); // 솔플
+    const fp=getBossFeasibility(equivStat, b.id, memberCount); // 파티
+    if(!f) return '';
+    return `<div class="bf-row">
+      <span class="bf-boss">${b.name} <span class="diff-badge diff-${b.diff}" style="font-size:.55rem;">${DL[b.diff]}</span></span>
+      <span style="display:flex;gap:3px;">
+        <span style="font-size:.58rem;color:var(--muted2);">솔</span>${getBossLabel(f)}
+        <span style="font-size:.58rem;color:var(--muted2);">파</span>${getBossLabel(fp)}
+      </span>
+    </div>`;
+  }).join('');
+
+  return `<div class="char-card" id="cc-${charId}">
+    ${isMyUid?`<button class="char-del-btn" onclick="deleteChar('${uid}','${charId}')">✕</button>`:''}
+    <div class="char-avatar-row">
+      ${ch.charImage?`<img class="char-img" src="${ch.charImage}" alt="">`:`<div class="char-img-ph">👤</div>`}
+      <div>
+        <div class="char-name">${ch.charName||'?'}</div>
+        <div class="char-meta">
+          Lv.<b>${ch.charLevel||'-'}</b>
+          ${ch.charClass?` · <b>${ch.charClass}</b>`:''}
+          ${ch.charWorld?`<br><b>${ch.charWorld}</b>`:''}
+        </div>
+      </div>
+    </div>
+    <div class="char-stat-row">
+      <div class="char-stat">⚔️ 공/마 <b>${(ch.attackPower||0).toLocaleString()}</b></div>
+      <div class="char-stat">🎯 보공 <b>${(ch.bossPercent||0).toFixed(0)}%</b></div>
+      <div class="char-stat">🔷 헥사스탯 <b>Lv.${ch.hexaStatTotal||0}</b></div>
+      <div class="char-stat">⚡ 6차코어 <b>Lv.${ch.hexaCoreTotal||0}</b></div>
+    </div>
+    <div class="char-equiv">환산주스탯: ${equivStat.toLocaleString()}만</div>
+    <div class="boss-feasibility">${feasRows}</div>
+  </div>`;
 }
 
 function renderMembers(){
   const grid=document.getElementById('membersGrid');
   const list=Object.entries(members);
   if(!list.length){
-    grid.innerHTML='<div class="empty" style="grid-column:1/-1;"><span class="icon">👥</span>파티원이 없어요</div>';
+    grid.innerHTML='<div class="empty"><span class="icon">👥</span>캐릭터를 추가해주세요</div>';
     return;
   }
-  grid.innerHTML=list.map(([uid,m])=>`
-    <div class="member-card${uid===myUid?' is-me':''}">
-      ${uid===myUid?'<div class="me-badge">나</div>':''}
-      <div class="member-avatar-row">
-        ${m.charImage
-          ?`<img class="member-img" src="${m.charImage}" alt="">`
-          :`<div class="member-img-ph">👤</div>`}
-        <div>
-          <div class="member-name">${m.charName||'?'}</div>
-          <div class="member-meta">
-            ${m.charLevel?`Lv.<b>${m.charLevel}</b>`:''}
-            ${m.charClass?` · <b>${m.charClass}</b>`:''}
-            ${m.charWorld?`<br><b>${m.charWorld}</b>`:''}
-          </div>
-        </div>
+  grid.innerHTML=list.map(([uid,m])=>{
+    const chars=Object.entries(m.chars||{});
+    const isMe=uid===myUid;
+    return `<div class="member-section${isMe?' is-me':''}">
+      <div class="member-section-header">
+        <span class="member-section-nick">${m.nickname||'?'}</span>
+        ${isMe?'<span class="me-badge">나</span>':''}
+        <span style="margin-left:auto;font-size:.72rem;color:var(--muted2);">${chars.length}캐릭</span>
       </div>
-      <div class="member-nick">닉네임: <b>${m.nickname||'-'}</b></div>
-    </div>`).join('');
+      <div class="char-grid">
+        ${chars.map(([cid,ch])=>renderCharCard(uid,cid,ch,isMe)).join('')}
+      </div>
+      ${isMe?`<button class="add-char-btn" onclick="document.getElementById('charNameInput').focus();document.querySelector('.nav-item').click();">+ 캐릭터 추가</button>`:''}
+    </div>`;
+  }).join('');
 }
 
 // ════════════════════════════════════════════
@@ -1387,7 +1665,13 @@ function renderMembers(){
 // ════════════════════════════════════════════
 function renderRec(){
   const el=document.getElementById('recContent');
-  const mList=Object.values(members).filter(m=>m.charLevel);
+  // 각 파티원의 대표 캐릭터(equivStat 최고)를 기준으로 사용
+  const mList=Object.values(members).map(m=>{
+    const chars=Object.values(m.chars||{});
+    if(!chars.length) return null;
+    const best=chars.reduce((a,b)=>(a.equivStat||0)>(b.equivStat||0)?a:b);
+    return {...best, nickname:m.nickname};
+  }).filter(Boolean);
   if(!mList.length){
     el.innerHTML='<div class="empty"><span class="icon">🗺</span>파티원 탭에서 캐릭터를 먼저 등록해주세요</div>';
     return;
@@ -1398,8 +1682,17 @@ function renderRec(){
   let allMeso=0, partMeso=0;
 
   sorted.forEach(b=>{
-    const ok=mList.filter(m=>m.charLevel>=b.minLv);
-    const no=mList.filter(m=>m.charLevel<b.minLv);
+    const th=BOSS_THRESHOLDS[b.id];
+    const ok=mList.filter(m=>{
+      if(!th) return m.charLevel>=b.minLv;
+      const f=getBossFeasibility(m.equivStat||0,b.id,mList.length);
+      return f==='easy'||f==='ok';
+    });
+    const no=mList.filter(m=>{
+      if(!th) return m.charLevel<b.minLv;
+      const f=getBossFeasibility(m.equivStat||0,b.id,mList.length);
+      return f==='no';
+    });
     if(ok.length===mList.length){all.push({b,ok,no});allMeso+=b.meso;}
     else if(ok.length>0){part.push({b,ok,no});partMeso+=ok.length/mList.length*b.meso;}
   });

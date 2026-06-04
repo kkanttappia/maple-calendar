@@ -1,18 +1,18 @@
 // netlify/functions/nexon-proxy.js
-// 넥슨 Open API CORS 프록시 - 브라우저 대신 서버에서 호출
+// 넥슨 Open API CORS 프록시 - 서버 환경변수 Key 사용
 
 exports.handler = async (event) => {
-  const apiKey = event.headers['x-nxopen-api-key'];
+  // 서버에 저장된 API Key 사용 (유저가 입력 불필요)
+  const apiKey = process.env.NEXON_API_KEY;
 
   if (!apiKey) {
     return {
-      statusCode: 401,
-      body: JSON.stringify({ error: { message: 'API Key가 없습니다.' } }),
+      statusCode: 500,
+      body: JSON.stringify({ error: { message: '서버 API Key가 설정되지 않았습니다. Netlify 환경변수를 확인해주세요.' } }),
     };
   }
 
-  // 요청 경로에서 넥슨 API 경로 추출
-  // /api/nexon/maplestory/v1/id → /maplestory/v1/id
+  // /api/nexon/maplestory/v1/... → https://open.api.nexon.com/maplestory/v1/...
   const nexonPath = event.path.replace('/.netlify/functions/nexon-proxy', '').replace('/api/nexon', '');
   const query = event.rawQuery ? `?${event.rawQuery}` : '';
   const nexonUrl = `https://open.api.nexon.com${nexonPath}${query}`;

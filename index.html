@@ -1530,18 +1530,19 @@ const BOSS_THRESHOLDS = {
 // ════════════════════════════════════════════
 function calcEquivStat(statList, attackPower, bossPercent, hexaStat){
   const sm={};
-  if(statList) statList.forEach(s=>{ sm[s.stat_type]=parseFloat(s.stat_value)||0; });
-  // 공/마력 (이미 registerChar에서 계산된 값 우선 사용)
+  if(statList) statList.forEach(s=>{
+    const k=(s.stat_name||s.stat_type||'').trim();
+    sm[k]=parseFloat(s.stat_value)||0;
+  });
   const atk = attackPower||0;
-  // 주스탯: STR/DEX/INT/LUK 한글/영문 키 모두 커버
-  const STR = sm['STR']||sm['힘']||0;
-  const DEX = sm['DEX']||sm['민첩']||0;
-  const INT = sm['INT']||sm['지능']||0;
-  const LUK = sm['LUK']||sm['운']||0;
+  // 주스탯: 실제 API 키값 '힘','민첩','지능','운' 또는 STR/DEX/INT/LUK
+  const STR = sm['힘'] ||sm['STR']||0;
+  const DEX = sm['민첩']||sm['DEX']||0;
+  const INT = sm['지능']||sm['INT']||0;
+  const LUK = sm['운'] ||sm['LUK']||0;
   const mainStat = Math.max(STR, DEX, INT, LUK);
   const allStats = STR+DEX+INT+LUK;
   const subStat = allStats - mainStat;
-  // 보스데미지 배율
   const bossDmg = 1 + ((bossPercent||0)/100);
   // 환산주스탯 = (주스탯 + 부스탯×0.2 + 공마×4) × 보스배율 / 10000 + 헥사보정
   const base = (mainStat + subStat*0.2 + atk*4) * bossDmg;
@@ -1597,24 +1598,26 @@ async function registerChar(){
       fetch(`${BASE}/character/hexamatrix?ocid=${ocid}&date=${dt}`,{headers:H}),
     ]);
 
-    // 스탯 (다양한 키명 커버)
+    // 스탯 (stat_name 키 기준, 실제 API 응답 구조)
     let statList=[], attackPower=0, bossPercent=0;
     if(sRes.ok){
       const sd=await sRes.json();
       statList = sd.final_stat||[];
       const sm={};
       statList.forEach(s=>{
-        const k=s.stat_type||'';
+        // API는 stat_name 또는 stat_type 둘 다 사용 가능
+        const k=(s.stat_name||s.stat_type||'').trim();
         const v=parseFloat(s.stat_value)||0;
         sm[k]=v;
       });
-      // 공격력/마력 키값 여러 형태 커버
+      // 콘솔 확인: '최대 스탯공격력', '최소 스탯공격력' → 최대값 사용
       attackPower = Math.max(
-        sm['최대 공격력']||sm['공격력']||sm['ATK']||0,
-        sm['최대 마력']||sm['마력']||sm['MAGIC ATK']||0
+        sm['최대 스탯공격력']||sm['최대 공격력']||sm['공격력']||0,
+        sm['최대 스탯마력']  ||sm['최대 마력']  ||sm['마력']  ||0
       );
-      // 보스데미지 키값 여러 형태 커버
-      bossPercent = sm['보스 몬스터 데미지']||sm['보스몬스터 데미지']||sm['보스 데미지']||0;
+      // 보스데미지: '보스 몬스터 데미지' 또는 '보스몬스터 데미지'
+      bossPercent = sm['보스 몬스터 데미지']||sm['보스몬스터 데미지']||
+                   sm['보스 데미지']||sm['보스데미지']||0;
     }
 
     // 헥사스탯 자동 조회 (키값 여러 형태 커버)

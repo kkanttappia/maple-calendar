@@ -1005,44 +1005,45 @@ select option{background:var(--s2);}
 // ════════════════════════════════════════════
 //  BOSS DATA
 // ════════════════════════════════════════════
+// diffRank: 메이플 공식 보스 난이도표 순서 (낮을수록 쉬움)
 const BOSSES=[
-  {id:'cygnus_e', name:'시그너스',   diff:'E',cycle:'weekly', meso:4_550_000,  minLv:180},
-  {id:'hilla_h',  name:'힐라',       diff:'H',cycle:'weekly', meso:5_750_000,  minLv:190},
-  {id:'pb_c',     name:'핑크빈',     diff:'C',cycle:'weekly', meso:6_580_000,  minLv:170},
-  {id:'zak_c',    name:'자쿰',       diff:'C',cycle:'weekly', meso:7_210_000,  minLv:180},
-  {id:'cygnus_n', name:'시그너스',   diff:'N',cycle:'weekly', meso:7_500_000,  minLv:190},
-  {id:'pierre_c', name:'피에르',     diff:'C',cycle:'weekly', meso:13_500_000, minLv:190},
-  {id:'vellum_c', name:'벨룸',       diff:'C',cycle:'weekly', meso:13_500_000, minLv:190},
-  {id:'pap_c',    name:'파풀라투스', diff:'C',cycle:'weekly', meso:13_800_000, minLv:190},
-  {id:'mag_h',    name:'매그너스',   diff:'H',cycle:'weekly', meso:14_440_000, minLv:180},
-  {id:'lotus_n',  name:'스우',       diff:'N',cycle:'weekly', meso:17_600_000, minLv:190},
-  {id:'damian_n', name:'데미안',     diff:'N',cycle:'weekly', meso:18_400_000, minLv:190},
-  {id:'gas_n',    name:'가엔슬',     diff:'N',cycle:'weekly', meso:26_800_000, minLv:200},
-  {id:'lucid_e',  name:'루시드',     diff:'E',cycle:'weekly', meso:31_400_000, minLv:200},
-  {id:'will_e',   name:'윌',         diff:'E',cycle:'weekly', meso:34_000_000, minLv:200},
-  {id:'lucid_n',  name:'루시드',     diff:'N',cycle:'weekly', meso:37_500_000, minLv:210},
-  {id:'will_n',   name:'윌',         diff:'N',cycle:'weekly', meso:43_300_000, minLv:210},
-  {id:'dusk_n',   name:'더스크',     diff:'N',cycle:'weekly', meso:46_300_000, minLv:210},
-  {id:'dunkel_n', name:'듄켈',       diff:'N',cycle:'weekly', meso:50_000_000, minLv:210},
-  {id:'damian_h', name:'데미안',     diff:'H',cycle:'weekly', meso:51_500_000, minLv:210},
-  {id:'lotus_h',  name:'스우',       diff:'H',cycle:'weekly', meso:54_200_000, minLv:210},
-  {id:'jin_h',    name:'진 힐라',    diff:'H',cycle:'weekly', meso:68_000_000, minLv:220},
-  {id:'lucid_h',  name:'루시드',     diff:'H',cycle:'weekly', meso:109_600_000,minLv:220},
-  {id:'will_h',   name:'윌',         diff:'H',cycle:'weekly', meso:128_000_000,minLv:220},
-  {id:'dusk_h',   name:'더스크',     diff:'H',cycle:'weekly', meso:145_000_000,minLv:225},
-  {id:'dunkel_h', name:'듄켈',       diff:'H',cycle:'weekly', meso:160_000_000,minLv:225},
-  {id:'seren_n',  name:'세렌',       diff:'N',cycle:'weekly', meso:200_000_000,minLv:245},
-  {id:'kaling_e', name:'카링',       diff:'E',cycle:'weekly', meso:280_000_000,minLv:250},
-  {id:'seren_h',  name:'세렌',       diff:'H',cycle:'weekly', meso:420_000_000,minLv:260},
-  {id:'kaling_n', name:'카링',       diff:'N',cycle:'weekly', meso:480_000_000,minLv:260},
-  {id:'kalos_e',  name:'칼로스',     diff:'E',cycle:'weekly', meso:600_000_000,minLv:265},
-  {id:'kaling_h', name:'카링',       diff:'H',cycle:'weekly', meso:900_000_000,minLv:275},
-  {id:'kalos_n',  name:'칼로스',     diff:'N',cycle:'weekly', meso:1_100_000_000,minLv:275},
-  {id:'limbo_n',  name:'림보',       diff:'N',cycle:'weekly', meso:1_600_000_000,minLv:280},
-  {id:'kalos_h',  name:'칼로스',     diff:'H',cycle:'weekly', meso:2_200_000_000,minLv:285},
-  {id:'limbo_h',  name:'림보',       diff:'H',cycle:'weekly', meso:3_500_000_000,minLv:285},
-  {id:'bm_m_n',   name:'검은 마법사',diff:'N',cycle:'monthly',meso:560_000_000, minLv:220},
-  {id:'bm_m_h',   name:'검은 마법사',diff:'H',cycle:'monthly',meso:1_200_000_000,minLv:235},
+  {id:'pb_c',     name:'핑크빈',     diff:'C',cycle:'weekly', meso:6_580_000,   minLv:170, diffRank:1},
+  {id:'zak_c',    name:'자쿰',       diff:'C',cycle:'weekly', meso:7_210_000,   minLv:180, diffRank:2},
+  {id:'cygnus_e', name:'시그너스',   diff:'E',cycle:'weekly', meso:4_550_000,   minLv:180, diffRank:3},
+  {id:'mag_h',    name:'매그너스',   diff:'H',cycle:'weekly', meso:14_440_000,  minLv:180, diffRank:4},
+  {id:'hilla_h',  name:'힐라',       diff:'H',cycle:'weekly', meso:5_750_000,   minLv:190, diffRank:5},
+  {id:'cygnus_n', name:'시그너스',   diff:'N',cycle:'weekly', meso:7_500_000,   minLv:190, diffRank:6},
+  {id:'pierre_c', name:'피에르',     diff:'C',cycle:'weekly', meso:13_500_000,  minLv:190, diffRank:7},
+  {id:'vellum_c', name:'벨룸',       diff:'C',cycle:'weekly', meso:13_500_000,  minLv:190, diffRank:8},
+  {id:'pap_c',    name:'파풀라투스', diff:'C',cycle:'weekly', meso:13_800_000,  minLv:190, diffRank:9},
+  {id:'lotus_n',  name:'스우',       diff:'N',cycle:'weekly', meso:17_600_000,  minLv:190, diffRank:10},
+  {id:'damian_n', name:'데미안',     diff:'N',cycle:'weekly', meso:18_400_000,  minLv:190, diffRank:11},
+  {id:'gas_n',    name:'가엔슬',     diff:'N',cycle:'weekly', meso:26_800_000,  minLv:200, diffRank:12},
+  {id:'lucid_e',  name:'루시드',     diff:'E',cycle:'weekly', meso:31_400_000,  minLv:200, diffRank:13},
+  {id:'will_e',   name:'윌',         diff:'E',cycle:'weekly', meso:34_000_000,  minLv:200, diffRank:14},
+  {id:'lucid_n',  name:'루시드',     diff:'N',cycle:'weekly', meso:37_500_000,  minLv:210, diffRank:15},
+  {id:'will_n',   name:'윌',         diff:'N',cycle:'weekly', meso:43_300_000,  minLv:210, diffRank:16},
+  {id:'dusk_n',   name:'더스크',     diff:'N',cycle:'weekly', meso:46_300_000,  minLv:210, diffRank:17},
+  {id:'dunkel_n', name:'듄켈',       diff:'N',cycle:'weekly', meso:50_000_000,  minLv:210, diffRank:18},
+  {id:'damian_h', name:'데미안',     diff:'H',cycle:'weekly', meso:51_500_000,  minLv:210, diffRank:19},
+  {id:'lotus_h',  name:'스우',       diff:'H',cycle:'weekly', meso:54_200_000,  minLv:210, diffRank:20},
+  {id:'jin_h',    name:'진 힐라',    diff:'H',cycle:'weekly', meso:68_000_000,  minLv:220, diffRank:21},
+  {id:'bm_m_n',   name:'검은 마법사',diff:'N',cycle:'monthly',meso:560_000_000, minLv:220, diffRank:22},
+  {id:'lucid_h',  name:'루시드',     diff:'H',cycle:'weekly', meso:109_600_000, minLv:220, diffRank:23},
+  {id:'will_h',   name:'윌',         diff:'H',cycle:'weekly', meso:128_000_000, minLv:220, diffRank:24},
+  {id:'bm_m_h',   name:'검은 마법사',diff:'H',cycle:'monthly',meso:1_200_000_000,minLv:235,diffRank:25},
+  {id:'dusk_h',   name:'더스크',     diff:'H',cycle:'weekly', meso:145_000_000, minLv:225, diffRank:26},
+  {id:'dunkel_h', name:'듄켈',       diff:'H',cycle:'weekly', meso:160_000_000, minLv:225, diffRank:27},
+  {id:'seren_n',  name:'세렌',       diff:'N',cycle:'weekly', meso:200_000_000, minLv:245, diffRank:28},
+  {id:'kaling_e', name:'카링',       diff:'E',cycle:'weekly', meso:280_000_000, minLv:250, diffRank:29},
+  {id:'seren_h',  name:'세렌',       diff:'H',cycle:'weekly', meso:420_000_000, minLv:260, diffRank:30},
+  {id:'kaling_n', name:'카링',       diff:'N',cycle:'weekly', meso:480_000_000, minLv:260, diffRank:31},
+  {id:'kalos_e',  name:'칼로스',     diff:'E',cycle:'weekly', meso:600_000_000, minLv:265, diffRank:32},
+  {id:'kaling_h', name:'카링',       diff:'H',cycle:'weekly', meso:900_000_000, minLv:275, diffRank:33},
+  {id:'kalos_n',  name:'칼로스',     diff:'N',cycle:'weekly', meso:1_100_000_000,minLv:275,diffRank:34},
+  {id:'limbo_n',  name:'림보',       diff:'N',cycle:'weekly', meso:1_600_000_000,minLv:280,diffRank:35},
+  {id:'kalos_h',  name:'칼로스',     diff:'H',cycle:'weekly', meso:2_200_000_000,minLv:285,diffRank:36},
+  {id:'limbo_h',  name:'림보',       diff:'H',cycle:'weekly', meso:3_500_000_000,minLv:285,diffRank:37},
 ];
 const DL={E:'이지',N:'노멀',H:'하드',C:'카오스'};
 
@@ -1116,7 +1117,6 @@ async function submitNick(){
 function enterApp(code){
   roomCode=code;
   document.getElementById('roomCodeDisp').textContent=code;
-  // calY/calM이 설정 안 된 경우 항상 초기화
   if(!calY){ const now=new Date(); calY=now.getFullYear(); calM=now.getMonth(); }
   const url=new URL(location.href);
   url.searchParams.set('room',code);
@@ -1124,20 +1124,27 @@ function enterApp(code){
   localStorage.setItem('maple_room',code);
   localStorage.setItem('maple_nick',myNick);
   localStorage.setItem('maple_uid',myUid);
-  // 기존 리스너 정리 후 재등록 (중복 방지)
   fbUnsubs.forEach(u=>u()); fbUnsubs=[];
-  fbOn(`rooms/${code}/events`,v=>{
-    events=v||{};
-    renderCal();
-    renderUpcoming();
-  });
-  fbOn(`rooms/${code}/members`,v=>{
-    members=v||{};
-    renderMembers();
-  });
+  fbOn(`rooms/${code}/events`,v=>{events=v||{};renderCal();renderUpcoming();});
+  fbOn(`rooms/${code}/members`,v=>{members=v||{};renderMembers();});
   renderCal();
   renderBossList();
   buildColorRow();
+  // 마지막 활성 탭 복원
+  const lastTab=localStorage.getItem('maple_tab');
+  if(lastTab){
+    const tabMap={
+      'calPage':     {pageId:'calPage',    navId:'cal'},
+      'membersPage': {pageId:'membersPage',navId:'mem'},
+      'recPage':     {pageId:'recPage',    navId:'rec'},
+      'calcPage':    {pageId:'calcPage',   navId:'calc'},
+    };
+    const t=tabMap[lastTab];
+    if(t){
+      goPage(t.pageId, null, t.navId);
+      if(lastTab==='recPage') renderRec();
+    }
+  }
 }
 
 // leaveRoom 미사용 (로비 제거됨)
@@ -1197,6 +1204,7 @@ window.addEventListener('firebase-ready',async()=>{
 function goPage(id, desktopBtn, navId){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  localStorage.setItem('maple_tab', id);
   // desktop tabs
   document.querySelectorAll('.desktop-tab').forEach(b=>b.classList.remove('active'));
   if(desktopBtn) desktopBtn.classList.add('active');
@@ -1529,24 +1537,13 @@ const BOSS_THRESHOLDS = {
 //  넥슨 API stat_list에서 주스탯, 부스탯, 공/마력, 보스데미지% 추출
 // ════════════════════════════════════════════
 function calcEquivStat(statList, attackPower, bossPercent, hexaStat){
-  const sm={};
-  if(statList) statList.forEach(s=>{
-    const k=(s.stat_name||s.stat_type||'').trim();
-    sm[k]=parseFloat(s.stat_value)||0;
-  });
-  const atk = attackPower||0;
-  // 주스탯: 실제 API 키값 '힘','민첩','지능','운' 또는 STR/DEX/INT/LUK
-  const STR = sm['힘'] ||sm['STR']||0;
-  const DEX = sm['민첩']||sm['DEX']||0;
-  const INT = sm['지능']||sm['INT']||0;
-  const LUK = sm['운'] ||sm['LUK']||0;
-  const mainStat = Math.max(STR, DEX, INT, LUK);
-  const allStats = STR+DEX+INT+LUK;
-  const subStat = allStats - mainStat;
-  const bossDmg = 1 + ((bossPercent||0)/100);
-  // 환산주스탯 = (주스탯 + 부스탯×0.2 + 공마×4) × 보스배율 / 10000 + 헥사보정
-  const base = (mainStat + subStat*0.2 + atk*4) * bossDmg;
-  const hexaBonus = (hexaStat||0) * 1000;
+  // attackPower = '최대 스탯공격력' (이미 스탯×공마 적용된 최종값)
+  // 환산주스탯 = 최대 스탯공격력 × (1 + 보스데미지%) / 10000 + 헥사보정
+  // 헥사스탯 총레벨 1당 약 0.5만 환산 (커뮤니티 근사값)
+  const statAtk = attackPower||0;
+  const bossMult = 1 + ((bossPercent||0)/100);
+  const base = statAtk * bossMult;
+  const hexaBonus = (hexaStat||0) * 5000; // 헥사스탯 레벨합 1당 약 5000 환산
   return Math.round((base + hexaBonus) / 10000);
 }
 
@@ -1598,27 +1595,28 @@ async function registerChar(){
       fetch(`${BASE}/character/hexamatrix?ocid=${ocid}&date=${dt}`,{headers:H}),
     ]);
 
-    // 스탯 (stat_name 키 기준, 실제 API 응답 구조)
-    let statList=[], attackPower=0, bossPercent=0;
+    // 스탯 파싱 (실제 API 키값 기준)
+    let statList=[], statAttack=0, bossPercent=0;
     if(sRes.ok){
       const sd=await sRes.json();
       statList = sd.final_stat||[];
       const sm={};
       statList.forEach(s=>{
-        // API는 stat_name 또는 stat_type 둘 다 사용 가능
         const k=(s.stat_name||s.stat_type||'').trim();
         const v=parseFloat(s.stat_value)||0;
         sm[k]=v;
       });
-      // 콘솔 확인: '최대 스탯공격력', '최소 스탯공격력' → 최대값 사용
-      attackPower = Math.max(
-        sm['최대 스탯공격력']||sm['최대 공격력']||sm['공격력']||0,
-        sm['최대 스탯마력']  ||sm['최대 마력']  ||sm['마력']  ||0
+      // '최대 스탯공격력' = 이미 스탯×공마가 곱해진 최종 스탯공격력 수치
+      // 마법사는 '최대 스탯마력' 사용
+      statAttack = Math.max(
+        sm['최대 스탯공격력']||0,
+        sm['최대 스탯마력']  ||0
       );
-      // 보스데미지: '보스 몬스터 데미지' 또는 '보스몬스터 데미지'
       bossPercent = sm['보스 몬스터 데미지']||sm['보스몬스터 데미지']||
-                   sm['보스 데미지']||sm['보스데미지']||0;
+                   sm['보스 데미지']||0;
     }
+    // attackPower 변수명 유지 (하위 호환)
+    const attackPower = statAttack;
 
     // 헥사스탯 자동 조회 (키값 여러 형태 커버)
     let hexaStatData=[], hexaStatTotal=0;
@@ -1666,7 +1664,7 @@ async function registerChar(){
       charLevel:info.character_level||0,
       charImage:info.character_image||'',
       charWorld:info.world_name||'-',
-      statList, attackPower, bossPercent,
+      statList, attackPower:statAttack, bossPercent,
       hexaStat,
       hexaStatTotal,
       hexaCoreTotal,
@@ -1694,6 +1692,69 @@ async function deleteChar(uid, charId){
   toast('🗑 캐릭터가 삭제됐어요');
 }
 
+async function refreshChar(uid, charId, charName){
+  if(!charName){toast('캐릭터명이 없어 새로고침할 수 없어요');return;}
+  const btn = document.querySelector(`#cc-${charId} .char-del-btn`);
+  toast('🔄 '+charName+' 데이터 새로고침 중...');
+  try{
+    const BASE='/api/nexon/maplestory/v1';
+    const H={};
+    const oRes=await fetch(`${BASE}/id?character_name=${encodeURIComponent(charName)}`,{headers:H});
+    if(!oRes.ok) throw new Error('캐릭터를 찾을 수 없습니다');
+    const {ocid}=await oRes.json();
+    let dt=yesterday(1);
+    let iResTest=await fetch(`${BASE}/character/basic?ocid=${ocid}&date=${dt}`,{headers:H});
+    if(!iResTest.ok){ dt=yesterday(2); iResTest=await fetch(`${BASE}/character/basic?ocid=${ocid}&date=${dt}`,{headers:H}); }
+    if(!iResTest.ok) throw new Error('조회 실패');
+    const info=await iResTest.json();
+    const [sRes,hStatRes,hMatRes]=await Promise.all([
+      fetch(`${BASE}/character/stat?ocid=${ocid}&date=${dt}`,{headers:H}),
+      fetch(`${BASE}/character/hexamatrix-stat?ocid=${ocid}&date=${dt}`,{headers:H}),
+      fetch(`${BASE}/character/hexamatrix?ocid=${ocid}&date=${dt}`,{headers:H}),
+    ]);
+    const sm={};
+    let statList=[];
+    if(sRes.ok){
+      const sd=await sRes.json();
+      statList=sd.final_stat||[];
+      statList.forEach(s=>{ sm[(s.stat_name||s.stat_type||'').trim()]=parseFloat(s.stat_value)||0; });
+    }
+    const statAttack=Math.max(sm['최대 스탯공격력']||0, sm['최대 스탯마력']||0);
+    const bossPercent=sm['보스 몬스터 데미지']||sm['보스몬스터 데미지']||0;
+    let hexaStatTotal=0, hexaCoreTotal=0, hexaStatData=[], hexaCoreData=[];
+    if(hStatRes.ok){
+      const hsd=await hStatRes.json();
+      hexaStatData=hsd.character_hexa_stat_core||[];
+      hexaStatTotal=hexaStatData.reduce((s,c)=>s+(c.stat_level||c.main_stat_level||0)+(c.stat_level2||c.sub_stat_level_1||0)+(c.stat_level3||c.sub_stat_level_2||0),0);
+    }
+    if(hMatRes.ok){
+      const hmd=await hMatRes.json();
+      hexaCoreData=hmd.character_hexa_core_equipment||[];
+      hexaCoreTotal=hexaCoreData.reduce((s,c)=>s+(c.hexa_core_level||c.core_level||0),0);
+    }
+    const hexaStat=hexaStatTotal;
+    const equivStat=calcEquivStat(statList,statAttack,bossPercent,hexaStat);
+    const existing=await fbGet(`rooms/${roomCode}/members/${uid}`)||{};
+    const chars=existing.chars||{};
+    if(chars[charId]){
+      chars[charId]={...chars[charId],
+        charName:info.character_name||charName,
+        charClass:info.character_class||'-',
+        charLevel:info.character_level||0,
+        charImage:info.character_image||'',
+        charWorld:info.world_name||'-',
+        statList, attackPower:statAttack, bossPercent,
+        hexaStat, hexaStatTotal, hexaCoreTotal,
+        hexaStatData:hexaStatData.slice(0,5),
+        hexaCoreData:hexaCoreData.slice(0,5),
+        equivStat,
+      };
+      await fbSet(`rooms/${roomCode}/members/${uid}`,{...existing,chars});
+      toast('✅ '+charName+' 새로고침 완료! 환산주스탯: '+equivStat.toLocaleString()+'만');
+    }
+  }catch(e){toast('⚠ 새로고침 실패: '+e.message);}
+}
+
 // updateHexaStat 제거 (API 자동조회로 대체)
 
 function getBossLabel(f){
@@ -1707,23 +1768,43 @@ function renderCharCard(uid, charId, ch, isMe){
   const equivStat=ch.equivStat||0;
   const memberCount=Object.keys(members).length;
 
-  // 보스 가능여부 상위 5개만 표시 (메소 순)
-  const topBosses=BOSSES.slice().sort((a,b)=>b.meso-a.meso).slice(0,8);
-  const feasRows=topBosses.map(b=>{
-    const f=getBossFeasibility(equivStat, b.id, 1); // 솔플
-    const fp=getBossFeasibility(equivStat, b.id, memberCount); // 파티
-    if(!f) return '';
+  // 보스를 diffRank(난이도) 순으로 정렬
+  const sortedBosses=[...BOSSES].sort((a,b)=>(a.diffRank||99)-(b.diffRank||99));
+  const myLv=ch.charLevel||0;
+  // 내 레벨에서 입장 가능한 보스 / 전체 보스 분류
+  const myLvBosses=sortedBosses.filter(b=>myLv>=b.minLv);
+  const otherBosses=sortedBosses.filter(b=>myLv<b.minLv);
+
+  function feasRow(b){
+    const f=getBossFeasibility(equivStat, b.id, 1);
+    const fp=getBossFeasibility(equivStat, b.id, memberCount);
     return `<div class="bf-row">
-      <span class="bf-boss">${b.name} <span class="diff-badge diff-${b.diff}" style="font-size:.55rem;">${DL[b.diff]}</span></span>
-      <span style="display:flex;gap:3px;">
+      <span class="bf-boss">${b.name} <span class="diff-badge diff-${b.diff}" style="font-size:.55rem;">${DL[b.diff]}</span>${b.cycle==='monthly'?'<span style="font-size:.55rem;color:var(--purple);margin-left:2px;">월</span>':''}</span>
+      <span style="display:flex;gap:3px;flex-shrink:0;">
         <span style="font-size:.58rem;color:var(--muted2);">솔</span>${getBossLabel(f)}
         <span style="font-size:.58rem;color:var(--muted2);">파</span>${getBossLabel(fp)}
       </span>
     </div>`;
-  }).join('');
+  }
+
+  const feasRows=`
+    <div style="font-size:.68rem;color:var(--muted2);margin-bottom:4px;font-weight:700;">
+      내 레벨 (Lv.${myLv}) 입장 가능 보스
+    </div>
+    ${myLvBosses.length?myLvBosses.map(feasRow).join(''):'<div style="font-size:.7rem;color:var(--muted2);">없음</div>'}
+    ${otherBosses.length?`
+    <div style="font-size:.68rem;color:var(--muted2);margin:8px 0 4px;font-weight:700;">
+      전체 보스 (레벨 미달)
+    </div>
+    ${otherBosses.map(feasRow).join('')}`:''}
+  `;
 
   return `<div class="char-card" id="cc-${charId}">
-    ${isMyUid?`<button class="char-del-btn" onclick="deleteChar('${uid}','${charId}')">✕</button>`:''}
+    ${isMyUid?`
+      <div style="position:absolute;top:8px;right:8px;display:flex;gap:4px;">
+        <button class="char-del-btn" title="데이터 새로고침" onclick="refreshChar('${uid}','${charId}','${ch.charName||''}')">🔄</button>
+        <button class="char-del-btn" onclick="deleteChar('${uid}','${charId}')">✕</button>
+      </div>`:''}
     <div class="char-avatar-row">
       ${ch.charImage?`<img class="char-img" src="${ch.charImage}" alt="">`:`<div class="char-img-ph">👤</div>`}
       <div>

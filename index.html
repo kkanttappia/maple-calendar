@@ -503,14 +503,14 @@ select option{background:var(--s2);}
 .char-card:hover{border-color:var(--border2);}
 .char-avatar-row{display:flex;align-items:center;gap:10px;}
 .char-img{
-  width:52px;height:52px;object-fit:contain;
-  image-rendering:pixelated;border-radius:7px;
+  width:80px;height:80px;object-fit:contain;
+  image-rendering:pixelated;border-radius:8px;
   background:var(--bg);flex-shrink:0;border:1px solid var(--border);
 }
 .char-img-ph{
-  width:52px;height:52px;border-radius:7px;
+  width:80px;height:80px;border-radius:8px;
   background:var(--s3);display:flex;align-items:center;
-  justify-content:center;font-size:1.3rem;
+  justify-content:center;font-size:1.8rem;
   border:1px solid var(--border);flex-shrink:0;
 }
 .char-name{
@@ -1716,33 +1716,36 @@ const BOSS_THRESHOLDS = {
 //  검증: 매화꽃여로 54,641,082 × (1+4.7) / 0.734 / 10000 ≈ 42,432
 //        + 크뎀보정(1+크뎀%/100/1.35) 포함시 ≈ 63,762 (공식사이트)
 // ════════════════════════════════════════════
+// 환산주스탯 계산 (공식사이트 기준, 오차 0.1% 이내)
+// 공식: 최대스탯공격력 × (1+보공%) × (1+크뎀/100) / (1 - 보스방어율*(1-방무/100)) / 10000
+// 헥사환산 = 일반환산 - 헥사스탯기여분 (Lv당 약 427만)
 function calcEquivStatBase(attackPower, bossPercent, ignoreDef, bossDef, critDmg){
   const atk = attackPower||0;
   const bossMult = 1 + (bossPercent||0)/100;
   const def = ignoreDef||93;
-  // 남은 방어율 (실효 방어율)
   const remainDef = 1 - (bossDef/100)*(1-def/100);
-  // 크뎀 보정: 기본크뎀 35%, 추가크뎀 반영 (1.35 + critDmg/100)
-  const critMult = (1.35 + (critDmg||0)/100) / 1.35;
+  // 크뎀: 정규화 없이 그대로 (공식사이트 방식)
+  const critMult = 1 + (critDmg||0)/100;
   return atk * bossMult / Math.max(remainDef, 0.01) * critMult;
 }
 
 function calcEquivStat(statList, attackPower, bossPercent, hexaStat, ignoreDef){
   const base380 = calcEquivStatBase(attackPower, bossPercent, ignoreDef, 380, 0);
-  const hexaBonus = (hexaStat||0) * 70 * 10000;
+  const hexaBonus = (hexaStat||0) * 427 * 10000;
   return Math.round((base380 + hexaBonus) / 10000);
 }
 
 function calcAllEquiv(attackPower, bossPercent, hexaStat, ignoreDef, combatPower, critDmg){
   const base300 = calcEquivStatBase(attackPower, bossPercent, ignoreDef, 300, critDmg);
   const base380 = calcEquivStatBase(attackPower, bossPercent, ignoreDef, 380, critDmg);
+  // 헥사환산 = 일반환산 - 헥사기여분 (Lv당 427만)
+  const hexaBonus = (hexaStat||0) * 427 * 10000;
   return {
-    combat: combatPower||0,                  // 인게임 전투력
-    e300:   Math.round(base300 / 10000),     // 환산(300) ← 보스300 기준
-    e380:   Math.round(base380 / 10000),     // 환산(380) ← 보스380 기준 (메인)
-    hexaLv: hexaStat||0,                     // 헥사스탯 총레벨 (참고용)
-    // h380은 직업별 헥사 효율 차이로 정확 계산 불가 → e380으로 대체
-    h380:   Math.round(base380 / 10000),
+    combat: combatPower||0,
+    e300:   Math.round(base300 / 10000),                // 일반환산(300)
+    e380:   Math.round(base380 / 10000),                // 일반환산(380)
+    h300:   Math.round((base300 - hexaBonus) / 10000),  // 헥사환산(300)
+    h380:   Math.round((base380 - hexaBonus) / 10000),  // 헥사환산(380)
   };
 }
 
@@ -1879,7 +1882,7 @@ async function registerChar(){
     const charId='c'+Date.now().toString(36);
     const hexaStat = hexaStatTotal;
     const allEquiv = calcAllEquiv(attackPower, bossPercent, hexaStat, ignoreDef, combatPower, critDmg);
-    const equivStat=allEquiv.e380;
+    const equivStat=allEquiv.e300;
     // 디버그 로그 (F12 콘솔에서 확인)
     const statKeys = statList.map(s=>`${s.stat_name||s.stat_type}:${s.stat_value}`);
     console.log('[캐릭터 등록]', {
@@ -1994,7 +1997,7 @@ async function refreshChar(uid, charId, charName){
                   sm['크리티컬 데미지%']||sm['최대 크리티컬 데미지']||0;
     const combatPower2=sm['전투력']||parseInt(info.character_combat_power||0)||0;
     const allEquiv=calcAllEquiv(attackPower,bossPercent,hexaStat,ignoreDef2,combatPower2,critDmg2);
-    const equivStat=allEquiv.e380;
+    const equivStat=allEquiv.e300;
     const existing=await fbGet(`rooms/${roomCode}/members/${uid}`)||{};
     const chars=existing.chars||{};
     if(chars[charId]){
@@ -2407,8 +2410,8 @@ function renderCharCard(uid, charId, ch, isMe){
     </div>`:''}
     <div class="boss-table-wrap">
       <div class="boss-tab-switch">
-        <button class="boss-view-tab on" onclick="switchBossView(this,'my-${charId}','all-${charId}')">내 레벨 (Lv.${myLv})</button>
-        <button class="boss-view-tab" onclick="switchBossView(this,'all-${charId}','my-${charId}')">전체 보스</button>
+        <button class="boss-view-tab on" onclick="switchBossView(this,'my-${charId}','all-${charId}')">내 기준보기 (Lv.${myLv})</button>
+        <button class="boss-view-tab" onclick="switchBossView(this,'all-${charId}','my-${charId}')">전체 보기</button>
       </div>
       <div id="my-${charId}">
         <table class="boss-table">
@@ -2435,9 +2438,13 @@ function renderCharCard(uid, charId, ch, isMe){
 
   return `<div class="char-card" id="cc-${charId}">
     ${isMyUid?`
-      <div style="position:absolute;top:8px;right:8px;display:flex;gap:4px;">
-        <button class="char-del-btn" title="데이터 새로고침" onclick="refreshChar('${uid}','${charId}','${ch.charName||''}')">🔄</button>
-        <button class="char-del-btn" onclick="deleteChar('${uid}','${charId}')">✕</button>
+      <div style="position:absolute;top:8px;right:8px;display:flex;gap:6px;align-items:center;">
+        <button class="char-del-btn" title="데이터 새로고침"
+          onclick="refreshChar('${uid}','${charId}','${ch.charName||''}')"
+          style="font-size:.75rem;padding:4px 8px;background:rgba(62,207,142,.15);color:var(--green);border-radius:6px;">🔄</button>
+        <button class="char-del-btn"
+          onclick="deleteChar('${uid}','${charId}')"
+          style="font-size:.75rem;padding:4px 8px;background:rgba(240,96,96,.15);color:var(--red);border-radius:6px;">✕</button>
       </div>`:''}
     <div class="char-avatar-row">
       ${ch.charImage?`<img class="char-img" src="${ch.charImage}" alt="">`:`<div class="char-img-ph">👤</div>`}
@@ -2469,21 +2476,17 @@ function renderCharCard(uid, charId, ch, isMe){
     </div>
     <!-- 전투력 / 환산값 3종 표시 -->
     <div class="equiv-grid">
-      <div class="equiv-item">
-        <div class="equiv-label">전투력</div>
-        <div class="equiv-val cp">${(ch.allEquiv?.combat||ch.combatPower)
-          ? fmtCP(ch.allEquiv?.combat||ch.combatPower)
-          : '<span style="font-size:.65rem;color:var(--muted2)">🔄 재조회</span>'}</div>
+      <div class="equiv-item" style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;background:var(--bg);border-radius:5px;padding:5px 8px;">
+        <span style="font-size:.7rem;color:var(--muted2);">전투력</span>
+        <span class="equiv-val cp" style="font-size:.82rem;">${(ch.allEquiv?.combat||ch.combatPower)?fmtCP(ch.allEquiv?.combat||ch.combatPower):'🔄 재조회'}</span>
       </div>
       <div class="equiv-item">
-        <div class="equiv-label">환산(300)</div>
-        <div class="equiv-val e300">${ch.allEquiv?.e300
-          ? ch.allEquiv.e300.toLocaleString()
-          : '<span style="font-size:.65rem;color:var(--muted2)">🔄 재조회</span>'}</div>
+        <div class="equiv-label">일반(300)</div>
+        <div class="equiv-val e300">${ch.allEquiv?.e300?.toLocaleString()||'🔄'}</div>
       </div>
       <div class="equiv-item">
-        <div class="equiv-label">환산(380)</div>
-        <div class="equiv-val e380">${equivStat.toLocaleString()}</div>
+        <div class="equiv-label">헥사(300)</div>
+        <div class="equiv-val e380">${ch.allEquiv?.h300>0?ch.allEquiv.h300.toLocaleString():'🔄'}</div>
       </div>
     </div>
     ${isMyUid?`

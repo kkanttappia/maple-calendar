@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>🍁 메이플 파티 캘린더</title>
+
+<!-- PWA -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#f5a623">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="파티 캘린더">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
@@ -623,6 +633,40 @@ select option{background:var(--s2);}
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
 }
 
+/* 스펙업 추천 */
+.spec-section{margin-top:8px;}
+.spec-item{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 12px;background:var(--s2);
+  border:1px solid var(--border);border-radius:var(--r2);
+  margin-bottom:6px;transition:border-color .15s;
+}
+.spec-item:hover{border-color:var(--gold);}
+.spec-rank{
+  font-family:'Black Han Sans',sans-serif;font-size:1rem;
+  color:var(--gold);width:20px;flex-shrink:0;text-align:center;
+  margin-top:1px;
+}
+.spec-rank.r1{color:var(--gold);}
+.spec-rank.r2{color:var(--muted2);}
+.spec-rank.r3{color:#cd7f32;}
+.spec-body{flex:1;min-width:0;}
+.spec-title{font-size:.82rem;font-weight:700;color:var(--text);margin-bottom:2px;}
+.spec-desc{font-size:.72rem;color:var(--muted2);line-height:1.6;}
+.spec-gain{
+  font-family:'Black Han Sans',sans-serif;font-size:.75rem;
+  color:var(--green);white-space:nowrap;flex-shrink:0;
+}
+.spec-tag{
+  display:inline-block;font-size:.6rem;padding:1px 6px;
+  border-radius:8px;margin-right:4px;font-weight:700;
+}
+.tag-star   {background:rgba(245,166,35,.2);color:var(--gold);}
+.tag-cube   {background:rgba(160,96,245,.2);color:var(--purple);}
+.tag-scroll {background:rgba(96,160,245,.2);color:var(--blue);}
+.tag-hexa   {background:rgba(62,207,142,.2);color:var(--green);}
+.tag-add    {background:rgba(255,107,53,.2);color:var(--orange);}
+
 /* 보스 테이블 */
 .boss-table-wrap{margin-top:8px;}
 .boss-tab-switch{display:flex;gap:6px;margin-bottom:8px;}
@@ -873,7 +917,9 @@ select option{background:var(--s2);}
     </div>
     <div class="header-right">
       <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()">🌙</button>
-      <button class="btn-ghost btn-sm" onclick="copyLink()">🔗 공유</button>
+      <button class="btn-ghost btn-sm" id="installBtn" onclick="installApp()"
+        style="display:none">📲 설치</button>
+      <button class="btn-ghost btn-sm" onclick="copyLink()">🔗 초대</button>
       <button class="btn-ghost btn-sm" onclick="openNickModal()">✏️ 닉네임</button>
     </div>
   </div>
@@ -1222,10 +1268,39 @@ function enterApp(code){
 
 // leaveRoom 미사용 (로비 제거됨)
 
-function copyLink(){
+async function copyLink(){
   const url=new URL(location.href);
   url.searchParams.set('room',roomCode);
-  navigator.clipboard.writeText(url.toString()).then(()=>toast('🔗 초대 링크가 복사됐어요!'));
+  const shareUrl=url.toString();
+  const shareData={
+    title:'🍁 메이플 파티 캘린더',
+    text:`파티 캘린더에 초대합니다! 방 코드: ${roomCode}`,
+    url: shareUrl,
+  };
+  // 모바일: Web Share API (카카오톡·문자 등 네이티브 공유 시트)
+  if(navigator.share && navigator.canShare && navigator.canShare(shareData)){
+    try{
+      await navigator.share(shareData);
+      return;
+    }catch(e){
+      // 사용자가 취소한 경우 무시
+      if(e.name==='AbortError') return;
+    }
+  }
+  // PC fallback: 클립보드 복사
+  try{
+    await navigator.clipboard.writeText(shareUrl);
+    toast('🔗 초대 링크가 클립보드에 복사됐어요!');
+  }catch(e){
+    // clipboard도 안되면 임시 input으로 복사
+    const inp=document.createElement('input');
+    inp.value=shareUrl;
+    document.body.appendChild(inp);
+    inp.select();
+    document.execCommand('copy');
+    document.body.removeChild(inp);
+    toast('🔗 초대 링크가 복사됐어요!');
+  }
 }
 
 function nickErr(m){document.getElementById('nickErr').textContent=m;}
@@ -1713,11 +1788,12 @@ async function registerChar(){
     const info=await iResTest.json();
     // 전투력은 character/popularity API에서 제공되기도 함 - stat에서 우선 시도
 
-    // 스탯 + 헥사스탯 + 헥사코어 병렬 조회
-    const [sRes, hStatRes, hMatRes] = await Promise.all([
+    // 스탯 + 헥사스탯 + 헥사코어 + 장비 병렬 조회
+    const [sRes, hStatRes, hMatRes, eqRes] = await Promise.all([
       fetch(`${BASE}/character/stat?ocid=${ocid}&date=${dt}`,{headers:H}),
       fetch(`${BASE}/character/hexamatrix-stat?ocid=${ocid}&date=${dt}`,{headers:H}),
       fetch(`${BASE}/character/hexamatrix?ocid=${ocid}&date=${dt}`,{headers:H}),
+      fetch(`${BASE}/character/item-equipment?ocid=${ocid}&date=${dt}`,{headers:H}),
     ]);
 
     // 스탯 파싱 (실제 API 키값 기준)
@@ -1739,6 +1815,8 @@ async function registerChar(){
     // 전투력이 stat에 없으면 basic API 필드에서 시도
     if(!combatPower) combatPower = parseInt(info.character_combat_power||0)||0;
 
+    const allEquiv = calcAllEquiv(attackPower, bossPercent, hexaStatTotal, ignoreDef, combatPower, critDmg);
+
         let hexaStatData=[], hexaStatTotal=0;
     if(hStatRes.ok){
       const hsd=await hStatRes.json();
@@ -1758,23 +1836,61 @@ async function registerChar(){
     if(hMatRes.ok){
       const hmd=await hMatRes.json();
       hexaCoreData = hmd.character_hexa_core_equipment||hmd.hexa_core_equipment||[];
-      hexaCoreTotal = hexaCoreData.reduce((sum,core)=>{
-        return sum+(core.hexa_core_level||core.core_level||0);
-      },0);
+      // 코어 타입별 분류
+      const coreTypeOf = core => {
+        const t = core.hexa_core_type||core.core_type||'';
+        if(t.includes('스킬') || t.includes('Skill')) return 'skill';
+        if(t.includes('마스터리') || t.includes('Mastery')) return 'mastery';
+        if(t.includes('공용') || t.includes('Common')) return 'common';
+        return 'skill';
+      };
+      hexaCoreTotal = hexaCoreData.reduce((sum,core)=>sum+(core.hexa_core_level||core.core_level||0),0);
+      // 코어 요약 정보 (타입별 개수 + 평균레벨)
+      const coreByType = {skill:[], mastery:[], common:[]};
+      hexaCoreData.forEach(core=>{
+        const t = coreTypeOf(core);
+        coreByType[t].push(core.hexa_core_level||core.core_level||0);
+      });
+      const coreSummary = {
+        skill:   {count:coreByType.skill.length,   avg:coreByType.skill.length?Math.round(coreByType.skill.reduce((a,b)=>a+b,0)/coreByType.skill.length):0,   total:coreByType.skill.reduce((a,b)=>a+b,0)},
+        mastery: {count:coreByType.mastery.length, avg:coreByType.mastery.length?Math.round(coreByType.mastery.reduce((a,b)=>a+b,0)/coreByType.mastery.length):0, total:coreByType.mastery.reduce((a,b)=>a+b,0)},
+        common:  {count:coreByType.common.length,  avg:coreByType.common.length?Math.round(coreByType.common.reduce((a,b)=>a+b,0)/coreByType.common.length):0,  total:coreByType.common.reduce((a,b)=>a+b,0)},
+      };
+    }
+
+    // 장비 데이터 파싱
+    let equipList=[];
+    if(eqRes&&eqRes.ok){
+      try{
+        const eqData=await eqRes.json();
+        equipList=(eqData.item_equipment||[]).map(eq=>({
+          slot:   eq.item_equipment_slot||'',
+          name:   eq.item_name||'',
+          star:   parseInt(eq.starforce||eq.item_starforce||0),
+          maxStar:parseInt(eq.starforce_scroll_flag||25),
+          potential: eq.potential_option_grade||'',
+          addPotential: eq.additional_potential_option_grade||'',
+          addOptions: eq.item_add_option||null,
+          upgradeCount: parseInt(eq.scroll_upgrade||0),
+          upgradeMax: parseInt(eq.scroll_upgradeable_count||eq.scroll_upgrade||0)+parseInt(eq.scroll_upgrade||0),
+          category: eq.item_equipment_type||'',
+        }));
+      }catch(e){}
     }
 
     const charId='c'+Date.now().toString(36);
     const hexaStat = hexaStatTotal;
-    const allEquiv=calcAllEquiv(attackPower, bossPercent, hexaStat, ignoreDef, combatPower, critDmg||0);
+
     const equivStat=allEquiv.e380;
     // 디버그 로그 (F12 콘솔에서 확인)
     const statKeys = statList.map(s=>`${s.stat_name||s.stat_type}:${s.stat_value}`);
     console.log('[캐릭터 등록]', {
       charName: info.character_name,
       attackPower, bossPercent, ignoreDef, critDmg, combatPower,
-      equivStat, allEquiv,
+      equivStat, allEquiv, equipList,
       hexaStatTotal, hexaCoreTotal,
-      // 전체 스탯 키값 목록
+      hexaStatData_raw: hexaStatData,   // 헥사스탯 원본 구조
+      hexaCoreData_raw: hexaCoreData,   // 헥사코어 원본 구조
       allStatKeys: statKeys,
     });
 
@@ -1791,8 +1907,8 @@ async function registerChar(){
       hexaStat,
       hexaStatTotal,
       hexaCoreTotal,
-      hexaStatData: hexaStatData.slice(0,5),
-      hexaCoreData:  hexaCoreData.slice(0,5),
+      hexaStatData: hexaStatData,
+      hexaCoreData:  hexaCoreData,
       equivStat,
     };
     await fbSet(`rooms/${roomCode}/members/${myUid}`,{
@@ -1830,10 +1946,11 @@ async function refreshChar(uid, charId, charName){
     if(!iResTest.ok){ dt=yesterday(2); iResTest=await fetch(`${BASE}/character/basic?ocid=${ocid}&date=${dt}`,{headers:H}); }
     if(!iResTest.ok) throw new Error('조회 실패');
     const info=await iResTest.json();
-    const [sRes,hStatRes,hMatRes]=await Promise.all([
+    const [sRes,hStatRes,hMatRes,eqRes]=await Promise.all([
       fetch(`${BASE}/character/stat?ocid=${ocid}&date=${dt}`,{headers:H}),
       fetch(`${BASE}/character/hexamatrix-stat?ocid=${ocid}&date=${dt}`,{headers:H}),
       fetch(`${BASE}/character/hexamatrix?ocid=${ocid}&date=${dt}`,{headers:H}),
+      fetch(`${BASE}/character/item-equipment?ocid=${ocid}&date=${dt}`,{headers:H}),
     ]);
     const sm={};
     let statList=[];
@@ -1854,6 +1971,25 @@ async function refreshChar(uid, charId, charName){
       hexaCoreData=hmd.character_hexa_core_equipment||[];
       hexaCoreTotal=hexaCoreData.reduce((s,c)=>s+(c.hexa_core_level||c.core_level||0),0);
     }
+    // 장비 데이터 파싱
+    let equipList=[];
+    if(eqRes&&eqRes.ok){
+      try{
+        const eqData=await eqRes.json();
+        equipList=(eqData.item_equipment||[]).map(eq=>({
+          slot:   eq.item_equipment_slot||'',
+          name:   eq.item_name||'',
+          star:   parseInt(eq.starforce||eq.item_starforce||0),
+          maxStar:25,
+          potential: eq.potential_option_grade||'',
+          addPotential: eq.additional_potential_option_grade||'',
+          addOptions: eq.item_add_option||null,
+          upgradeCount: parseInt(eq.scroll_upgrade||0),
+          category: eq.item_equipment_type||'',
+        }));
+      }catch(e){}
+    }
+
     const hexaStat=hexaStatTotal;
     const ignoreDef2=sm['방어율 무시']||sm['방어율무시']||sm['몬스터 방어율 무시']||0;
     const critDmg2=sm['크리티컬 데미지']||sm['크리티컬데미지']||
@@ -1871,7 +2007,7 @@ async function refreshChar(uid, charId, charName){
         charImage:info.character_image||'',
         charWorld:info.world_name||'-',
         statList, attackPower, bossPercent, ignoreDef,
-        hexaStat, hexaStatTotal, hexaCoreTotal,
+        hexaStat, hexaStatTotal, hexaCoreTotal, coreSummary,
         hexaStatData:hexaStatData.slice(0,5),
         hexaCoreData:hexaCoreData.slice(0,5),
         equivStat,
@@ -1888,6 +2024,332 @@ function getBossLabel(f){
   if(f==='easy') return '<span class="bf-badge bf-easy">여유</span>';
   if(f==='ok')   return '<span class="bf-badge bf-ok">가능</span>';
   return '<span class="bf-badge bf-no">불가</span>';
+}
+
+// ════════════════════════════════════════════
+//  스펙업 우선순위 추천 엔진
+// ════════════════════════════════════════════
+const POT_GRADE = {'레전드리':5,'유니크':4,'에픽':3,'레어':2,'':1};
+const GRADE_LABEL = {5:'레전드리',4:'유니크',3:'에픽',2:'레어',1:'없음'};
+const GRADE_COLOR = {5:'var(--gold)',4:'var(--purple)',3:'var(--blue)',2:'var(--green)',1:'var(--muted2)'};
+
+// 핵심 장비 슬롯 (보스 세팅 기준 중요도 순)
+const KEY_SLOTS = [
+  '무기','보조무기','엠블렘',
+  '모자','상의','하의','장갑','망토','신발','어깨장식','얼굴장식','눈장식','귀고리','벨트',
+  '반지1','반지2','반지3','반지4','펜던트','펜던트2',
+  '포켓 아이템','뱃지','훈장',
+];
+
+// 스타포스 목표 (아이템 레벨별 권장 성)
+function getTargetStar(itemLv){
+  if(itemLv >= 160) return 22;
+  if(itemLv >= 150) return 20;
+  if(itemLv >= 130) return 17;
+  if(itemLv >= 100) return 15;
+  return 12;
+}
+
+// ── 스펙 티어 판단 (우리 환산380 기준) ──
+// T1: ~2만  → 카오스 자쿰~스우노말
+// T2: ~5만  → 루시드/윌 노말~하드
+// T3: ~10만 → 더스크/듄켈 하드~세렌노말
+// T4: ~20만 → 세렌하드~카링하드
+// T5: 20만+ → 칼로스/림보 도전권
+function getTier(equivStat){
+  if(equivStat >= 200000) return 5;
+  if(equivStat >= 100000) return 4;
+  if(equivStat >= 50000)  return 3;
+  if(equivStat >= 20000)  return 2;
+  return 1;
+}
+
+// 티어별 기준값 (스펙 단계에 맞는 목표치)
+// hexaCoreAvg: 코어 평균 목표 레벨 (합산 아님)
+// hexaCoreCount: 목표 보유 코어 수
+const TIER_STANDARDS = {
+  1: {starTarget:17, weaponPot:4, armorPot:3, accPot:2, weaponAdd:3,
+      hexaCoreAvg:3,  hexaCoreCount:5,  hexaStat:6,
+      label:'입문', range:'~2만'},
+  2: {starTarget:20, weaponPot:4, armorPot:4, accPot:3, weaponAdd:4,
+      hexaCoreAvg:5,  hexaCoreCount:8,  hexaStat:15,
+      label:'중급', range:'2~5만'},
+  3: {starTarget:22, weaponPot:5, armorPot:4, accPot:4, weaponAdd:4,
+      hexaCoreAvg:10, hexaCoreCount:10, hexaStat:30,
+      label:'고급', range:'5~10만'},
+  4: {starTarget:22, weaponPot:5, armorPot:5, accPot:4, weaponAdd:5,
+      hexaCoreAvg:15, hexaCoreCount:12, hexaStat:50,
+      label:'최상위', range:'10~20만'},
+  5: {starTarget:22, weaponPot:5, armorPot:5, accPot:5, weaponAdd:5,
+      hexaCoreAvg:20, hexaCoreCount:15, hexaStat:70,
+      label:'극상위', range:'20만+'},
+};
+
+function analyzeSpec(ch){
+  const items     = ch.equipList || [];
+  const hexaCoreLv= ch.hexaCoreTotal || 0;
+  const hexaStatLv= ch.hexaStatTotal || 0;
+  const equivStat = ch.equivStat || 0;
+  const tier      = getTier(equivStat);
+  const std       = TIER_STANDARDS[tier];
+  const recs      = [];
+
+  const weaponSlots = ['무기','보조무기','엠블렘'];
+  const armorSlots  = ['모자','상의','하의','장갑','망토','신발','어깨장식'];
+  const accSlots    = ['얼굴장식','눈장식','귀고리','벨트','반지1','반지2','반지3','반지4','펜던트','펜던트2'];
+
+  function lowestPot(slots, potKey='potential'){
+    return items
+      .filter(eq=>slots.some(s=>eq.slot.includes(s)))
+      .sort((a,b)=>(POT_GRADE[a[potKey]]||1)-(POT_GRADE[b[potKey]]||1));
+  }
+
+  // ── 1. 무기/보조/엠블렘 윗잠 ──
+  const weaponPotLow=lowestPot(weaponSlots,'potential')
+    .filter(eq=>(POT_GRADE[eq.potential]||1)<std.weaponPot);
+  if(weaponPotLow.length){
+    const eq=weaponPotLow[0];
+    const target=GRADE_LABEL[std.weaponPot];
+    recs.push({
+      priority:1, tag:'cube', tagLabel:'윗잠',
+      title:`${eq.name} 잠재능력 → ${target} 목표`,
+      desc:`현재 [${GRADE_LABEL[POT_GRADE[eq.potential]||1]}]. ${tier>=3?'보공%+보공%+보공% 또는 공%+공%+공% 라인을 목표로 하세요.':'보공%/공% 라인을 노려요.'}`,
+      gain:'환산 ↑↑↑',
+    });
+  }
+
+  // ── 2. 무기/보조/엠블렘 아랫잠 ──
+  const weaponAddLow=lowestPot(weaponSlots,'addPotential')
+    .filter(eq=>(POT_GRADE[eq.addPotential]||1)<std.weaponAdd);
+  if(weaponAddLow.length){
+    const eq=weaponAddLow[0];
+    const target=GRADE_LABEL[std.weaponAdd];
+    recs.push({
+      priority:2, tag:'cube', tagLabel:'아랫잠',
+      title:`${eq.name} 추가 잠재능력 → ${target} 목표`,
+      desc:`현재 [${GRADE_LABEL[POT_GRADE[eq.addPotential]||1]}]. ${tier>=3?'보공%+보공%+보공% 풀보공 라인이 목표예요.':'보공% 라인을 노려요.'}`,
+      gain:'환산 ↑↑',
+    });
+  }
+
+  // ── 3. 방어구 윗잠 ──
+  const armorPotLow=lowestPot(armorSlots,'potential')
+    .filter(eq=>(POT_GRADE[eq.potential]||1)<std.armorPot);
+  if(armorPotLow.length){
+    const eq=armorPotLow[0];
+    const target=GRADE_LABEL[std.armorPot];
+    recs.push({
+      priority:3, tag:'cube', tagLabel:'윗잠',
+      title:`${eq.name} 잠재능력 → ${target} 목표`,
+      desc:`현재 [${GRADE_LABEL[POT_GRADE[eq.potential]||1]}]. ${tier>=4?'주스탯%+주스탯%+주스탯% 또는 방무무시% 라인이 목표예요.':'주스탯%/방무무시% 라인을 노려요.'}`,
+      gain:'환산 ↑↑',
+    });
+  }
+
+  // ── 4. 스타포스 ──
+  const starUpItems=items
+    .filter(eq=>eq.star<std.starTarget && KEY_SLOTS.some(s=>eq.slot.includes(s)))
+    .sort((a,b)=>a.star-b.star);
+  if(starUpItems.length){
+    const eq=starUpItems[0];
+    recs.push({
+      priority:4, tag:'star', tagLabel:'스타포스',
+      title:`${eq.name} ${eq.star}성 → ${std.starTarget}성 목표`,
+      desc:`${tier>=4?`22성은 스타포스 비용 대비 효율이 가장 높은 구간이에요. 파괴 주의 구간(${eq.star>=15?'현재 구간':'15~17성')})에서 이벤트를 활용하세요.`:`${std.starTarget}성까지 스타포스는 환산에 직접 반영돼요. 30/10/1 이벤트를 활용하세요.`}`,
+      gain:'환산 ↑↑',
+    });
+  }
+
+  // ── 5. 6차 스킬코어 ──
+  const cs = ch.coreSummary;
+  const skillAvg   = cs?.skill?.avg   || 0;
+  const skillCount = cs?.skill?.count || 0;
+  const mastAvg    = cs?.mastery?.avg || 0;
+
+  if(skillAvg < std.hexaCoreAvg || skillCount < std.hexaCoreCount){
+    const issue = skillAvg < std.hexaCoreAvg
+      ? `스킬코어 평균 Lv.${skillAvg} → ${std.hexaCoreAvg} 목표`
+      : `스킬코어 ${skillCount}개 보유 → ${std.hexaCoreCount}개 목표`;
+    recs.push({
+      priority:5, tag:'hexa', tagLabel:'6차코어',
+      title:`6차 스킬코어 강화 (${issue})`,
+      desc:`${tier>=3
+        ?'어센트(메인) 스킬코어를 최우선으로 Lv.10까지 올리고, 서브/코강 코어도 균형있게 강화하세요.'
+        :'솔 에르다를 모아 메인 스킬코어부터 강화하세요. 실딜 상승폭이 가장 커요.'}`,
+      gain:'실딜 ★★',
+    });
+  } else if(mastAvg < std.hexaCoreAvg * 0.5){
+    recs.push({
+      priority:5, tag:'hexa', tagLabel:'마스터리코어',
+      title:`마스터리 코어 강화 (평균 Lv.${mastAvg})`,
+      desc:'스킬코어가 충분히 올라갔으면 마스터리 코어도 강화하세요. 4차 스킬 강화로 안정적인 딜 상승이 가능해요.',
+      gain:'실딜 ↑',
+    });
+  }
+
+  // ── 6. 추가옵션 ──
+  const noAddOpt=items.filter(eq=>
+    !eq.addOptions &&
+    weaponSlots.concat(armorSlots).some(s=>eq.slot.includes(s))
+  );
+  if(noAddOpt.length){
+    recs.push({
+      priority:6, tag:'add', tagLabel:'추옵',
+      title:`추가옵션 없는 핵심 장비 ${noAddOpt.length}개`,
+      desc:`${noAddOpt.map(e=>e.name).slice(0,2).join(', ')} 등. ${tier>=3?'공격력/마력 최고값 추옵을 목표로 장인의 도구를 사용하세요.':'장인의 큐브로 주스탯 추옵을 부여하세요.'}`,
+      gain:'환산 ↑',
+    });
+  }
+
+  // ── 7. 액세서리 윗잠 ──
+  const accPotLow=lowestPot(accSlots,'potential')
+    .filter(eq=>(POT_GRADE[eq.potential]||1)<std.accPot);
+  if(accPotLow.length){
+    recs.push({
+      priority:7, tag:'cube', tagLabel:'윗잠',
+      title:`액세서리 잠재능력 업그레이드 (${accPotLow.length}개)`,
+      desc:`${tier>=4?'보공%+보공%+보공% 또는 방무무시% 라인이 목표예요. 레전드리 기준으로 큐브하세요.':'보공%/방무무시% 옵션을 노려요.'}`,
+      gain:'환산 ↑',
+    });
+  }
+
+  // ── 8. 헥사스탯 ──
+  if(hexaStatLv < std.hexaStat){
+    recs.push({
+      priority:8, tag:'hexa', tagLabel:'헥사스탯',
+      title:`헥사스탯 강화 Lv.${hexaStatLv} → ${std.hexaStat} 목표`,
+      desc:`${tier>=3?'주스탯/공격력 코어를 우선 강화하고, 솔 에르다 조각을 꾸준히 모으세요.':'솔 에르다를 모아 헥사스탯을 강화하세요. 주스탯 코어를 우선으로 올리세요.'}`,
+      gain:'환산 ↑',
+    });
+  }
+
+  // ── 9. 주문서 ──
+  const scrollItems=items.filter(eq=>
+    eq.upgradeCount>0 && KEY_SLOTS.some(s=>eq.slot.includes(s))
+  );
+  if(scrollItems.length){
+    recs.push({
+      priority:9, tag:'scroll', tagLabel:'주문서',
+      title:`업그레이드 가능 장비 ${scrollItems.length}개`,
+      desc:`${scrollItems.map(e=>e.name).slice(0,3).join(', ')} 등. ${tier>=4?'황금 망치로 슬롯을 복구하고 100% 주문서를 사용하세요.':'공격력 주문서를 우선적으로 사용하세요.'}`,
+      gain:'소폭 ↑',
+    });
+  }
+
+  // 티어 표시 추가
+  recs._tier = std.label;
+  recs._tierNo = tier;
+  return recs.sort((a,b)=>a.priority-b.priority).slice(0,10);
+}
+
+function renderSpecRec(ch){
+  if(ch.uid !== myUid) return '';
+  const recs = analyzeSpec(ch);
+  const tierNo  = recs._tier ? TIER_STANDARDS[getTier(ch.equivStat||0)].label : '?';
+  const tierColors = ['','var(--muted2)','var(--green)','var(--blue)','var(--purple)','var(--gold)'];
+  const tc = tierColors[getTier(ch.equivStat||0)] || 'var(--muted2)';
+
+  const tierBadge = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+    <span style="font-size:.7rem;color:var(--muted2);">스펙 티어</span>
+    <span style="font-family:'Black Han Sans',sans-serif;font-size:.85rem;color:${tc};">${tierNo}</span>
+    <span style="font-size:.65rem;color:var(--muted2);">기준 (환산 ${(ch.equivStat||0).toLocaleString()}만)</span>
+  </div>`;
+
+  if(!recs.length){
+    return tierBadge+`<div class="empty" style="padding:12px;font-size:.78rem;">
+      <span style="font-size:1.4rem;display:block;margin-bottom:4px;">🎉</span>
+      현재 티어 기준 스펙업 항목이 없어요!
+    </div>`;
+  }
+  return tierBadge + recs.map((r,i)=>`
+    <div class="spec-item">
+      <div class="spec-rank r${Math.min(i+1,3)}">${i+1}</div>
+      <div class="spec-body">
+        <div class="spec-title">
+          <span class="spec-tag tag-${r.tag}">${r.tagLabel}</span>${r.title}
+        </div>
+        <div class="spec-desc">${r.desc}</div>
+      </div>
+      <div class="spec-gain">${r.gain}</div>
+    </div>`).join('');
+}
+
+// ── 헥사 상세 렌더링 ──
+function renderHexaDetail(ch){
+  const statData  = ch.hexaStatData  || [];
+  const coreData  = ch.hexaCoreData  || [];
+
+  // 헥사스탯 분류 (코어별 1·2·3 슬롯)
+  const statRows = statData.length
+    ? statData.map((core, i) => {
+        const lv1 = core.stat_level      || core.main_stat_level  || 0;
+        const lv2 = core.stat_level2     || core.sub_stat_level_1 || 0;
+        const lv3 = core.stat_level3     || core.sub_stat_level_2 || 0;
+        const n1  = core.stat_type       || core.main_stat_name   || `스탯${i+1}`;
+        const n2  = core.stat_type2      || core.sub_stat_name_1  || '-';
+        const n3  = core.stat_type3      || core.sub_stat_name_2  || '-';
+        return `<tr>
+          <td style="color:var(--muted2);font-size:.68rem">코어${i+1}</td>
+          <td><span style="color:var(--blue);font-size:.68rem">${n1}</span> <b style="color:var(--text)">Lv.${lv1}</b></td>
+          <td><span style="color:var(--muted2);font-size:.65rem">${n2}</span> <b style="color:var(--text)">Lv.${lv2}</b></td>
+          <td><span style="color:var(--muted2);font-size:.65rem">${n3}</span> <b style="color:var(--text)">Lv.${lv3}</b></td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="4" style="color:var(--muted2);font-size:.68rem">데이터 없음 (🔄 재조회)</td></tr>';
+
+  // 헥사코어 분류 (스킬코어/공용코어/마스터리코어)
+  const coreTypeMap = {
+    '스킬 코어':    {label:'스킬코어',   color:'var(--gold)'},
+    'SkillCore':    {label:'스킬코어',   color:'var(--gold)'},
+    '공용 코어':    {label:'공용코어',   color:'var(--green)'},
+    'CommonCore':   {label:'공용코어',   color:'var(--green)'},
+    '마스터리 코어':{label:'마스터리',   color:'var(--purple)'},
+    'MasteryCore':  {label:'마스터리',   color:'var(--purple)'},
+  };
+
+  const coreRows = coreData.length
+    ? coreData.map(core => {
+        const type   = core.hexa_core_type || core.core_type || '코어';
+        const name   = core.hexa_core_name || core.core_name || type;
+        const lv     = core.hexa_core_level|| core.core_level|| 0;
+        const info   = coreTypeMap[type] || {label:type, color:'var(--muted2)'};
+        return `<tr>
+          <td><span class="bf-badge" style="background:rgba(0,0,0,.2);color:${info.color};font-size:.6rem">${info.label}</span></td>
+          <td style="font-size:.7rem;color:var(--text)">${name}</td>
+          <td style="text-align:right"><b style="color:var(--gold);font-family:'Black Han Sans',sans-serif">Lv.${lv}</b></td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="3" style="color:var(--muted2);font-size:.68rem">데이터 없음 (🔄 재조회)</td></tr>';
+
+  return `
+    <div style="background:var(--bg);border-radius:8px;overflow:hidden;border:1px solid var(--border);">
+      <div style="padding:6px 10px;font-size:.7rem;font-weight:700;color:var(--blue);
+        background:rgba(96,160,245,.08);border-bottom:1px solid var(--border);">
+        🔷 헥사스탯 (총 Lv.${ch.hexaStatTotal||0})
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:.68rem;">
+        <thead><tr style="background:var(--s3)">
+          <th style="padding:4px 8px;text-align:left;color:var(--muted2);font-weight:600"></th>
+          <th style="padding:4px 6px;color:var(--muted2);font-weight:600">1슬롯</th>
+          <th style="padding:4px 6px;color:var(--muted2);font-weight:600">2슬롯</th>
+          <th style="padding:4px 6px;color:var(--muted2);font-weight:600">3슬롯</th>
+        </tr></thead>
+        <tbody>${statRows}</tbody>
+      </table>
+      <div style="padding:6px 10px;font-size:.7rem;font-weight:700;color:var(--gold);
+        background:rgba(245,166,35,.08);border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-top:4px">
+        ⚡ 6차 코어 강화 (총 Lv.${ch.hexaCoreTotal||0})
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:.68rem;">
+        <tbody>${coreRows}</tbody>
+      </table>
+    </div>`;
+}
+
+function toggleHexaDetail(charId){
+  const el = document.getElementById('hx-'+charId);
+  if(!el) return;
+  el.style.display = el.style.display==='none' ? 'block' : 'none';
 }
 
 function switchBossView(btn, showId, hideId){
@@ -1930,6 +2392,19 @@ function renderCharCard(uid, charId, ch, isMe){
   }
 
   const feasRows=`
+    <!-- 스펙업 추천 (내 캐릭터만) -->
+    ${isMyUid?`
+    <div class="spec-section">
+      <div style="font-size:.72rem;font-weight:700;color:var(--orange);
+        margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+        📈 스펙업 우선순위
+        <span style="font-size:.65rem;color:var(--muted2);font-weight:400">
+          🔄 재조회 후 표시
+        </span>
+      </div>
+      ${ch.equipList?.length ? renderSpecRec({...ch, uid}) : 
+        '<div style="font-size:.72rem;color:var(--muted2);">🔄 재조회 버튼을 눌러 장비 데이터를 불러오세요</div>'}
+    </div>`:''}
     <div class="boss-table-wrap">
       <div class="boss-tab-switch">
         <button class="boss-view-tab on" onclick="switchBossView(this,'my-${charId}','all-${charId}')">내 레벨 (Lv.${myLv})</button>
@@ -1978,8 +2453,19 @@ function renderCharCard(uid, charId, ch, isMe){
     <div class="char-stat-row">
       <div class="char-stat">🎯 보공 <b>${(ch.bossPercent||0).toFixed(0)}%</b></div>
       <div class="char-stat">🛡 방무 <b>${(ch.ignoreDef||0).toFixed(0)}%</b></div>
-      <div class="char-stat">🔷 헥사스탯 <b>Lv.${ch.hexaStatTotal||0}</b></div>
-      <div class="char-stat">⚡ 6차코어 <b>Lv.${ch.hexaCoreTotal||0}</b></div>
+      <div class="char-stat" style="cursor:pointer;flex-direction:column;align-items:flex-start;gap:3px" onclick="toggleHexaDetail('${charId}')">
+        <div style="display:flex;align-items:center;gap:6px;width:100%;">
+          🔷 헥사스탯 <b>총 Lv.${ch.hexaStatTotal||0}</b>
+          <span style="font-size:.6rem;color:var(--muted2);margin-left:auto">▼ 상세</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          ${ch.coreSummary ? `
+            <span style="font-size:.67rem;color:var(--gold)">⚔️ 스킬코어 ${ch.coreSummary.skill.count}개 (평균 Lv.${ch.coreSummary.skill.avg})</span>
+            <span style="font-size:.67rem;color:var(--green)">🔰 마스터리 ${ch.coreSummary.mastery.count}개 (평균 Lv.${ch.coreSummary.mastery.avg})</span>
+            <span style="font-size:.67rem;color:var(--blue)">⭐ 공용코어 ${ch.coreSummary.common.count}개 (평균 Lv.${ch.coreSummary.common.avg})</span>
+          ` : `⚡ 6차코어 합산 Lv.${ch.hexaCoreTotal||0} <span style="font-size:.6rem;color:var(--muted2)">(🔄 재조회 시 분류)</span>`}
+        </div>
+      </div>
     </div>
     <!-- 전투력 / 환산값 3종 표시 -->
     <div class="equiv-grid">
@@ -2001,6 +2487,10 @@ function renderCharCard(uid, charId, ch, isMe){
       </div>
     </div>
     ${isMyUid?`
+    <!-- 헥사 상세 (토글) -->
+    <div id="hx-${charId}" style="display:none;margin:6px 0;">
+      ${renderHexaDetail(ch)}
+    </div>
     <div class="party-selector">
       <span class="party-selector-label">파티</span>
       ${[1,2,3,4].map(p=>`
@@ -2295,6 +2785,43 @@ function toast(msg){
 document.getElementById('evModal').addEventListener('click',function(e){
   if(e.target===this)closeModal();
 });
+</script>
+<script>
+// PWA 서비스 워커 등록
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('/sw.js')
+      .then(()=>console.log('✅ 서비스 워커 등록 완료'))
+      .catch(e=>console.log('서비스 워커 등록 실패:', e));
+  });
+}
+
+// PWA 설치 배너 (안드로이드)
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  // 설치 버튼 표시
+  const installBtn=document.getElementById('installBtn');
+  if(installBtn) installBtn.style.display='flex';
+});
+
+window.addEventListener('appinstalled', ()=>{
+  deferredPrompt=null;
+  const installBtn=document.getElementById('installBtn');
+  if(installBtn) installBtn.style.display='none';
+  toast('✅ 앱이 설치됐어요!');
+});
+
+function installApp(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(r=>{
+      if(r.outcome==='accepted') toast('🎉 앱 설치 완료!');
+      deferredPrompt=null;
+    });
+  }
+}
 </script>
 </body>
 </html>

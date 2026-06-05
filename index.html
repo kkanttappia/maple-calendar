@@ -1815,9 +1815,7 @@ async function registerChar(){
     // 전투력이 stat에 없으면 basic API 필드에서 시도
     if(!combatPower) combatPower = parseInt(info.character_combat_power||0)||0;
 
-    const allEquiv = calcAllEquiv(attackPower, bossPercent, hexaStatTotal, ignoreDef, combatPower, critDmg);
-
-        let hexaStatData=[], hexaStatTotal=0;
+    let hexaStatData=[], hexaStatTotal=0;
     if(hStatRes.ok){
       const hsd=await hStatRes.json();
       // API 응답 키값: character_hexa_stat_core 또는 character_hexa_stat_core_2
@@ -1880,7 +1878,7 @@ async function registerChar(){
 
     const charId='c'+Date.now().toString(36);
     const hexaStat = hexaStatTotal;
-
+    const allEquiv = calcAllEquiv(attackPower, bossPercent, hexaStat, ignoreDef, combatPower, critDmg);
     const equivStat=allEquiv.e380;
     // 디버그 로그 (F12 콘솔에서 확인)
     const statKeys = statList.map(s=>`${s.stat_name||s.stat_type}:${s.stat_value}`);
@@ -2570,7 +2568,7 @@ function renderMembers(){
       <div class="char-grid">
         ${chars.map(([cid,ch])=>renderCharCard(uid,cid,ch,isMe)).join('')}
       </div>
-      ${isMe?`<button class="add-char-btn" onclick="document.getElementById('charNameInput').focus();document.querySelector('.nav-item').click();">+ 캐릭터 추가</button>`:''}
+      ${isMe?`<button class="add-char-btn" onclick="document.getElementById('charNameInput').focus();">+ 캐릭터 추가</button>`:''}
     </div>`;
   }).join('');
   grid.appendChild(membersWrap);
